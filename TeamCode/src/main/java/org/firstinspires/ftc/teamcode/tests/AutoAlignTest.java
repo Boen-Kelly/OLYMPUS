@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 
 @TeleOp
-@Disabled
+//@Disabled
 public class AutoAlignTest extends LinearOpMode {
     public void runOpMode(){
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 1");

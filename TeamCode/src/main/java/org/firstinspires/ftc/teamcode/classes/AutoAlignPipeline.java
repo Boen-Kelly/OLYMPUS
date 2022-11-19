@@ -8,6 +8,8 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Rect;
@@ -63,6 +65,13 @@ public class AutoAlignPipeline {
         Mat greyscale = new Mat();
         Mat threshold = new Mat();
         Mat hierarchy = new Mat();
+        Mat mask = new Mat();
+        Mat filtered = new Mat();
+
+        Mat kernel = new Mat(5,5, CvType.CV_8UC1);
+
+        final Scalar LOWER_BOUND = new Scalar(50,20,20);
+        final Scalar UPPER_BOUND = new Scalar(100,255,255);
 
 
         double avg1, avg2;
@@ -78,17 +87,14 @@ public class AutoAlignPipeline {
 
         @Override
         public Mat processFrame(Mat input){
-            List <MatOfPoint> contours = new ArrayList<MatOfPoint>();
 
-            Imgproc.cvtColor(input, greyscale, Imgproc.COLOR_BGR2GRAY);
+            Imgproc.cvtColor(input, greyscale, Imgproc.COLOR_BGR2HSV);
+
+            Core.inRange(greyscale, LOWER_BOUND, UPPER_BOUND, mask);
+
+            Imgproc.morphologyEx(mask, filtered, Imgproc.MORPH_CLOSE, kernel);
 
             Imgproc.threshold(greyscale, threshold, threshVal, 255, Imgproc.THRESH_BINARY);
-
-
-            Imgproc.rectangle(threshold, midBox,new Scalar(255,0,0), 2);
-
-            Imgproc.findContours(threshold, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
-            Imgproc.drawContours(input, contours, -1, new Scalar(0,255,0), 1);
 
             switch (stage){
                 case 0:
@@ -98,11 +104,11 @@ public class AutoAlignPipeline {
                 case 1:
                     telemetry = "active stage is coi" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
                     Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
-                    return greyscale;
+                    return mask;
                 case 2:
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
                     Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
-                    return threshold;
+                    return filtered;
                 default:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
                     Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
