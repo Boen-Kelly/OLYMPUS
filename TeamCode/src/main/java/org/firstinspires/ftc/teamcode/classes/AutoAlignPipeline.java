@@ -67,6 +67,7 @@ public class AutoAlignPipeline {
         Mat hierarchy = new Mat();
         Mat mask = new Mat();
         Mat filtered = new Mat();
+        Mat output = new Mat();
 
         Mat kernel = new Mat(5,5, CvType.CV_8UC1);
 
@@ -80,7 +81,7 @@ public class AutoAlignPipeline {
         public void onViewportTapped() {
             stage ++;
 
-            if(stage > 3){
+            if(stage > 4){
                 stage = 0;
             }
         }
@@ -93,8 +94,9 @@ public class AutoAlignPipeline {
             Core.inRange(greyscale, LOWER_BOUND, UPPER_BOUND, mask);
 
             Imgproc.morphologyEx(mask, filtered, Imgproc.MORPH_CLOSE, kernel);
+//            Imgproc.morphologyEx(mask, filtered, Imgproc.MORPH_OPEN, kernel);
 
-            Imgproc.threshold(greyscale, threshold, threshVal, 255, Imgproc.THRESH_BINARY);
+            Core.bitwise_and(input, filtered, output);
 
             switch (stage){
                 case 0:
@@ -109,10 +111,14 @@ public class AutoAlignPipeline {
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
                     Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
                     return filtered;
-                default:
+                case 3:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
                     Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
                     return  input;
+                case 4:
+                    return output;
+                default:
+                    return output;
             }
         }
     }
