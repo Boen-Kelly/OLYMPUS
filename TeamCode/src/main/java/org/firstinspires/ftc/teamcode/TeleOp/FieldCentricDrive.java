@@ -234,7 +234,7 @@ public class FieldCentricDrive extends LinearOpMode {
             }
 
             if(armUp && isLiftUp){
-                arm.setTargetPosition(-3150 + armFineTune);
+                arm.setTargetPosition(-500 + armFineTune);
             }else{
                 arm.setTargetPosition(0);
             }
@@ -338,7 +338,7 @@ public class FieldCentricDrive extends LinearOpMode {
 //            }
 
             arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            arm.setPower(1);
+            arm.setPower(.5);
 
 
             //lightTimer(runtime.seconds(), blinkinLedDriver);
