@@ -95,11 +95,11 @@ public class AutoAlignPipeline {
             Imgproc.cvtColor(input, hsv, Imgproc.COLOR_BGR2HSV);
 
             Core.extractChannel(hsv, h, 0); //90-100
-            Core.inRange(h, LOWER_BOUND, UPPER_BOUND, h);
-            Core.extractChannel(hsv, s, 1);
-            Core.extractChannel(hsv, v, 2);
+            Core.extractChannel(hsv, s, 1); //170-255
+            Core.extractChannel(hsv, v, 2); //230-200
+            Core.inRange(v, LOWER_BOUND, UPPER_BOUND, v);
 
-            Core.inRange(hsv, LOWER_BOUND, UPPER_BOUND, mask);
+            Core.inRange(hsv, UPPER_BOUND, LOWER_BOUND, mask);
 
             telemetry = "0: " + mask.get(x,y)[0] + "\nlength: " + mask.get(x,y).length + "\nlower & upper bound: " + LOWER_BOUND + "\n" + UPPER_BOUND;
 
