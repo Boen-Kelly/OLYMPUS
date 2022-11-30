@@ -86,7 +86,7 @@ public class AutoAlignPipeline {
         public void onViewportTapped() {
             stage ++;
 
-            if(stage > 1){
+            if(stage > 2){
                 stage = 0;
             }
         }
@@ -99,11 +99,11 @@ public class AutoAlignPipeline {
 
 //            output = input;
 
-//            Imgproc.cvtColor(input, greyscale, Imgproc.COLOR_BGR2HSV);
+            Imgproc.cvtColor(input, greyscale, Imgproc.COLOR_BGR2GRAY);
 
-            Core.inRange(input, LOWER_BOUND, UPPER_BOUND, mask);
+            Core.inRange(greyscale, LOWER_BOUND, UPPER_BOUND, mask);
 
-            telemetry = "h: " + input.get(x,y)[0] + "\ns: " + input.get(x,y)[1] + "\nv: " + input.get(x,y)[2];
+            telemetry = "0: " + mask.get(x,y)[0] + "\nlength: " + mask.get(x,y).length + "\nlower & upper bound: " + LOWER_BOUND + "\n" + UPPER_BOUND;
 
 //            Imgproc.morphologyEx(mask, open, Imgproc.MORPH_OPEN, kernel);
 //            Imgproc.morphologyEx(mask, closed, Imgproc.MORPH_OPEN, kernel);
@@ -126,7 +126,8 @@ public class AutoAlignPipeline {
                 case 2:
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
 //                    Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
-                    return open;
+                    Imgproc.circle(greyscale, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    return greyscale;
                 case 3:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
 //                    Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
