@@ -25,8 +25,8 @@ public class AutoAlignPipeline {
     public static Rect midBox = new Rect(185,115,25,25);
     public static int threshVal = 128;
 
-    public static double LH = 40, LS = 20, LV = 80;
-    public static double UH = 60, US = 80, UV = 100;
+    public static double LH = 90, LS = 170, LV = 230;
+    public static double UH = 100, US = 255, UV = 200;
 
     public static int x = 10, y = 10;
 
@@ -79,7 +79,7 @@ public class AutoAlignPipeline {
         public void onViewportTapped() {
             stage ++;
 
-            if(stage > 5){
+            if(stage > 2){
                 stage = 0;
             }
         }
@@ -94,12 +94,12 @@ public class AutoAlignPipeline {
 
             Imgproc.cvtColor(input, hsv, Imgproc.COLOR_BGR2HSV);
 
-            Core.extractChannel(hsv, h, 0); //90-100
-            Core.extractChannel(hsv, s, 1); //170-255
-            Core.extractChannel(hsv, v, 2); //230-200
-            Core.inRange(v, LOWER_BOUND, UPPER_BOUND, v);
+//            Core.extractChannel(hsv, h, 0); //90-100
+//            Core.extractChannel(hsv, s, 1); //170-255
+//            Core.extractChannel(hsv, v, 2); //230-200
+//            Core.inRange(v, LOWER_BOUND, UPPER_BOUND, v);
 
-            Core.inRange(hsv, UPPER_BOUND, LOWER_BOUND, mask);
+            Core.inRange(hsv, LOWER_BOUND, UPPER_BOUND, mask);
 
             telemetry = "0: " + mask.get(x,y)[0] + "\nlength: " + mask.get(x,y).length + "\nlower & upper bound: " + LOWER_BOUND + "\n" + UPPER_BOUND;
 
