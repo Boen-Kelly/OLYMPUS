@@ -1,9 +1,6 @@
 
 package org.firstinspires.ftc.teamcode.classes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -11,7 +8,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
@@ -20,12 +16,6 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 
 @Config
 public class AutoAlignPipeline {
@@ -68,7 +58,7 @@ public class AutoAlignPipeline {
     class Threshold extends OpenCvPipeline {
 
         int stage = 0;
-        Mat greyscale = new Mat();
+        Mat hsv = new Mat();
         Mat threshold = new Mat();
         Mat hierarchy = new Mat();
         Mat mask = new Mat();
@@ -76,6 +66,9 @@ public class AutoAlignPipeline {
         Mat output = new Mat();
         Mat open = new Mat();
         Mat closed = new Mat();
+        Mat h = new Mat();
+        Mat s = new Mat();
+        Mat v = new Mat();
 
         Mat kernel = new Mat(5,5, CvType.CV_8UC1);
 
@@ -86,7 +79,7 @@ public class AutoAlignPipeline {
         public void onViewportTapped() {
             stage ++;
 
-            if(stage > 2){
+            if(stage > 5){
                 stage = 0;
             }
         }
@@ -99,9 +92,14 @@ public class AutoAlignPipeline {
 
 //            output = input;
 
-            Imgproc.cvtColor(input, greyscale, Imgproc.COLOR_BGR2GRAY);
+            Imgproc.cvtColor(input, hsv, Imgproc.COLOR_BGR2HSV);
 
-            Core.inRange(greyscale, LOWER_BOUND, UPPER_BOUND, mask);
+            Core.extractChannel(hsv, h, 0); //90-100
+            Core.inRange(h, LOWER_BOUND, UPPER_BOUND, h);
+            Core.extractChannel(hsv, s, 1);
+            Core.extractChannel(hsv, v, 2);
+
+            Core.inRange(hsv, LOWER_BOUND, UPPER_BOUND, mask);
 
             telemetry = "0: " + mask.get(x,y)[0] + "\nlength: " + mask.get(x,y).length + "\nlower & upper bound: " + LOWER_BOUND + "\n" + UPPER_BOUND;
 
@@ -126,16 +124,16 @@ public class AutoAlignPipeline {
                 case 2:
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
 //                    Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
-                    Imgproc.circle(greyscale, new Point(x,y), 2, new Scalar(255,0,0),-1);
-                    return greyscale;
+                    Imgproc.circle(hsv, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    return hsv;
                 case 3:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
 //                    Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
-                    return  open;
+                    return h;
                 case 4:
-                    return open;
+                    return s;
                 case 5:
-                    return input;
+                    return v;
                 case 6:
                     return output;
                 default:
