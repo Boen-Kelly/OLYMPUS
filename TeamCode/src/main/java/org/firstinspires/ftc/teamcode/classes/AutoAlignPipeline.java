@@ -12,6 +12,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
@@ -33,6 +34,11 @@ public class AutoAlignPipeline {
     String telemetry = "waiting for input";
     public static Rect midBox = new Rect(185,115,25,25);
     public static int threshVal = 128;
+
+    public static double LH = 40, LS = 20, LV = 80;
+    public static double UH = 60, US = 80, UV = 100;
+
+    public static int x = 10, y = 10;
 
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
@@ -68,11 +74,10 @@ public class AutoAlignPipeline {
         Mat mask = new Mat();
         Mat filtered = new Mat();
         Mat output = new Mat();
+        Mat open = new Mat();
+        Mat closed = new Mat();
 
         Mat kernel = new Mat(5,5, CvType.CV_8UC1);
-
-        final Scalar LOWER_BOUND = new Scalar(50,20,20);
-        final Scalar UPPER_BOUND = new Scalar(100,255,255);
 
 
         double avg1, avg2;
@@ -81,7 +86,7 @@ public class AutoAlignPipeline {
         public void onViewportTapped() {
             stage ++;
 
-            if(stage > 4){
+            if(stage > 1){
                 stage = 0;
             }
         }
@@ -89,33 +94,48 @@ public class AutoAlignPipeline {
         @Override
         public Mat processFrame(Mat input){
 
-            Imgproc.cvtColor(input, greyscale, Imgproc.COLOR_BGR2HSV);
+            Scalar LOWER_BOUND = new Scalar(LH,LS,LV);
+            Scalar UPPER_BOUND = new Scalar(UH,US,UV);
 
-            Core.inRange(greyscale, LOWER_BOUND, UPPER_BOUND, mask);
+//            output = input;
 
-            Imgproc.morphologyEx(mask, filtered, Imgproc.MORPH_CLOSE, kernel);
-//            Imgproc.morphologyEx(mask, filtered, Imgproc.MORPH_OPEN, kernel);
+//            Imgproc.cvtColor(input, greyscale, Imgproc.COLOR_BGR2HSV);
 
-            Core.bitwise_and(input, filtered, output);
+            Core.inRange(input, LOWER_BOUND, UPPER_BOUND, mask);
+
+            telemetry = "h: " + input.get(x,y)[0] + "\ns: " + input.get(x,y)[1] + "\nv: " + input.get(x,y)[2];
+
+//            Imgproc.morphologyEx(mask, open, Imgproc.MORPH_OPEN, kernel);
+//            Imgproc.morphologyEx(mask, closed, Imgproc.MORPH_OPEN, kernel);
+
+//            Core.add(open, closed, filtered);
+
+//            Core.bitwise_and(input, input, output, mask);
 
             switch (stage){
                 case 0:
-                    telemetry = "active stage is ycrcb" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
-                    return greyscale;
+//                    telemetry = "active stage is ycrcb" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
+//                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
+                    Imgproc.circle(input, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    return input;
                 case 1:
-                    telemetry = "active stage is coi" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
+//                    telemetry = "active stage is coi" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
+//                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
+                    Imgproc.circle(mask, new Point(x,y), 2, new Scalar(255,0,0),-1);
                     return mask;
                 case 2:
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-                    Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
-                    return filtered;
+//                    Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
+                    return open;
                 case 3:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-                    Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
-                    return  input;
+//                    Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
+                    return  open;
                 case 4:
+                    return open;
+                case 5:
+                    return input;
+                case 6:
                     return output;
                 default:
                     return output;
