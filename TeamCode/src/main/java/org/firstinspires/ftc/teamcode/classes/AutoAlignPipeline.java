@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.R;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -29,7 +30,7 @@ public class AutoAlignPipeline {
     public static Rect midBox = new Rect(185,115,25,25);
     public static int threshVal = 128;
 
-    public static double LH = 90, LS = 170, LV = 180;
+    public static double LH = 90, LS = 170, LV = 0;
     public static double UH = 120, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
@@ -47,7 +48,7 @@ public class AutoAlignPipeline {
             public void onOpened()
             {
                 webcam.setPipeline(thresh);
-                webcam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_RIGHT);
+                webcam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
 
             @Override
@@ -70,11 +71,12 @@ public class AutoAlignPipeline {
         Mat output = new Mat();
         Mat open = new Mat();
         Mat closed = new Mat();
-        Mat h = new Mat();
-        Mat s = new Mat();
-        Mat v = new Mat();
 
-        Mat kernel = new Mat(5,5, CvType.CV_8UC1);
+        Rect boundingRect = new Rect();
+
+        Point top, bottom;
+
+        Mat kernel = new Mat(12,12, CvType.CV_8UC1);
 
 
         double avg1, avg2;
@@ -115,6 +117,15 @@ public class AutoAlignPipeline {
 
             Imgproc.findContours(filtered, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
             Imgproc.drawContours(input, contours, -1, new Scalar(0,255,0), 1);
+
+            boundingRect = Imgproc.boundingRect(filtered);
+
+            Imgproc.rectangle(input,boundingRect, new Scalar(255,0,0), 2);
+
+            top = new Point(boundingRect.x + boundingRect.width*.5,boundingRect.y);
+            bottom = new Point(boundingRect.x + boundingRect.width*.5, boundingRect.y +boundingRect.height);
+
+            Imgproc.line(input, top,bottom, new Scalar(255,0,0));
 
             switch (stage){
                 case 0:
