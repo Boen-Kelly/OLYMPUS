@@ -197,4 +197,8 @@ public class AutoAlignPipeline {
         RIGHT,
         ON_POINT
     }
+
+    public polePos getPos(){
+        return pos;
+    }
 }
