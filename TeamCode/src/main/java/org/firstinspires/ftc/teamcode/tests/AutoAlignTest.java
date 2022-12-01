@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 
@@ -20,6 +21,9 @@ public class AutoAlignTest extends LinearOpMode {
         fl = hardwareMap.get(DcMotor.class, "fl");
         fr = hardwareMap.get(DcMotor.class, "fr");
 
+        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+
         bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -32,16 +36,16 @@ public class AutoAlignTest extends LinearOpMode {
 
         while (opModeIsActive()){
 
-            if(pipeline.getPos().equals(AutoAlignPipeline.polePos.LEFT)){
-                bl.setPower(.2);
-                fl.setPower(.2);
-                br.setPower(-.2);
-                fr.setPower(-.2);
-            }else if(pipeline.getPos().equals(AutoAlignPipeline.polePos.RIGHT)){
-                bl.setPower(-.2);
-                fl.setPower(-.2);
-                br.setPower(.2);
-                fr.setPower(.2);
+            if(pipeline.getPos().equals(AutoAlignPipeline.polePos.RIGHT)){
+                bl.setPower(.3);
+                fl.setPower(.3);
+                br.setPower(-.3);
+                fr.setPower(-.3);
+            }else if(pipeline.getPos().equals(AutoAlignPipeline.polePos.LEFT)){
+                bl.setPower(-.3);
+                fl.setPower(-.3);
+                br.setPower(.3);
+                fr.setPower(.3);
             }else{
                 bl.setPower(0);
                 fl.setPower(0);

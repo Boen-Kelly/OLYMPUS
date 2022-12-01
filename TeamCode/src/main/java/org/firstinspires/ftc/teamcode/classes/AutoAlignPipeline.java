@@ -34,7 +34,7 @@ public class AutoAlignPipeline {
     public static double UH = 120, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
-    public static double boxWidth = 10;
+    public static double boxWidth = 40;
 
     polePos pos = polePos.ON_POINT;
 
