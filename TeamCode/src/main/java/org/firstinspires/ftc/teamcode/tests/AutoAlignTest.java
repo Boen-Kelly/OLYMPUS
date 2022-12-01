@@ -20,6 +20,11 @@ public class AutoAlignTest extends LinearOpMode {
         fl = hardwareMap.get(DcMotor.class, "fl");
         fr = hardwareMap.get(DcMotor.class, "fr");
 
+        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         telemetry.addLine("Waiting for start");
         telemetry.update();
 
@@ -33,10 +38,18 @@ public class AutoAlignTest extends LinearOpMode {
                 br.setPower(-.2);
                 fr.setPower(-.2);
             }else if(pipeline.getPos().equals(AutoAlignPipeline.polePos.RIGHT)){
-
+                bl.setPower(-.2);
+                fl.setPower(-.2);
+                br.setPower(.2);
+                fr.setPower(.2);
             }else{
-
+                bl.setPower(0);
+                fl.setPower(0);
+                br.setPower(0);
+                fr.setPower(0);
             }
+
+
             telemetry.addData("Pipeline says", pipeline);
             telemetry.update();
         }
