@@ -48,19 +48,28 @@ public class RightParkCone extends LinearOpMode {
         waitForStart();
 
         TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .lineTo(new Vector2d(-36, -12))
+                .lineTo(new Vector2d(-36, 7))
                 .lineTo(new Vector2d(-36, 12))
-                .turn(Math.toRadians(-90))
+                .turn(Math.toRadians(-135))
                 .build();
 
         drive.followTrajectorySequence(traj);
 
-        for(int i = 0; i < 3; i++){
-            Trajectory pickpup = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .splineTo(new Vector2d(-60,12), Math.toRadians(180))
+        pipeline.align();
+
+        Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*5, drive.getPoseEstimate().getY() - Math.sin(45)*5, Math.toRadians(135)))
+                .build();
+
+        drive.followTrajectory(firstDeliver);
+
+        for(int i = 0; i < 1; i++){
+            TrajectorySequence pickup = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
+                    .lineTo(new Vector2d(-60,12))
                     .build();
 
-            drive.followTrajectory(pickpup);
+            drive.followTrajectorySequence(pickup);
 
 //            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate(), true)
 ////                    .splineTo(new Vector2d(-48,12), Math.toRadians(180))
@@ -77,15 +86,14 @@ public class RightParkCone extends LinearOpMode {
             pipeline.align();
 
             Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .back(5)
+                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*5, drive.getPoseEstimate().getY() - Math.sin(45)*5, Math.toRadians(135)))
                     .build();
 
             drive.followTrajectory(backup);
         }
 
         TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .forward(5)
-                .turn(Math.toRadians(-45))
+                .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(90)))
                 .lineToLinearHeading(new Pose2d(-36, 36, Math.toRadians(90)))
                 .turn(Math.toRadians(-90))
                 .build();
