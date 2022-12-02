@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.R;
@@ -39,11 +40,14 @@ public class AutoAlignPipeline {
     public static int x = 10, y = 10;
     public static double boxWidth = 40;
     public static double frontPoint = .75, backPoint = .75;
+    double startTime = 0;
 
     polePos pos = polePos.ON_POINT;
 
     DcMotor bl, br, fl, fr;
     Servo front, back;
+
+    ElapsedTime time = new ElapsedTime();
 
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
@@ -230,19 +234,22 @@ public class AutoAlignPipeline {
     }
 
     public void align(){
-        while(!pos.equals(polePos.ON_POINT)) {
+        time.reset();
+        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 1000) {
             telemetry = "aligning, pos is: " + pos;
             if (pos.equals(polePos.RIGHT)) {
-                bl.setPower(.3);
-                fl.setPower(.3);
-                br.setPower(-.3);
-                fr.setPower(-.3);
+                startTime = time.time();
+                bl.setPower(.1);
+                fl.setPower(.1);
+                br.setPower(-.1);
+                fr.setPower(-.1);
             } else if (pos.equals(polePos.LEFT)) {
-                bl.setPower(-.3);
-                fl.setPower(-.3);
-                br.setPower(.3);
-                fr.setPower(.3);
-            } else {
+                startTime = time.time();
+                bl.setPower(-.1);
+                fl.setPower(-.1);
+                br.setPower(.1);
+                fr.setPower(.1);
+            } else if(pos.equals(polePos.ON_POINT)){
                 bl.setPower(0);
                 fl.setPower(0);
                 br.setPower(0);
