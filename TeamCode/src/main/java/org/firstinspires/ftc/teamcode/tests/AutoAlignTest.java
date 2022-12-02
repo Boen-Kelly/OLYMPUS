@@ -14,7 +14,7 @@ public class AutoAlignTest extends LinearOpMode {
     public void runOpMode(){
         DcMotor bl, br, fl, fr;
 
-        AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 1");
+        AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
         bl = hardwareMap.get(DcMotor.class, "bl");
         br = hardwareMap.get(DcMotor.class, "br");

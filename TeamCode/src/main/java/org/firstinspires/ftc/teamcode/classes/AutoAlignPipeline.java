@@ -2,7 +2,10 @@
 package org.firstinspires.ftc.teamcode.classes;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.R;
@@ -30,16 +33,40 @@ public class AutoAlignPipeline {
     public static Rect midBox = new Rect(185,115,25,25);
     public static int threshVal = 128;
 
-    public static double LH = 90, LS = 170, LV = 0;
+    public static double LH = 90, LS = 170, LV = 160;
     public static double UH = 120, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
     public static double boxWidth = 40;
+    public static double frontPoint = .75, backPoint = .75;
 
     polePos pos = polePos.ON_POINT;
 
+    DcMotor bl, br, fl, fr;
+    Servo front, back;
+
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
+
+        bl = hardwareMap.get(DcMotor.class, "bl");
+        br = hardwareMap.get(DcMotor.class, "br");
+        fl = hardwareMap.get(DcMotor.class, "fl");
+        fr = hardwareMap.get(DcMotor.class, "fr");
+
+        front = hardwareMap.get(Servo.class, "front");
+        back = hardwareMap.get(Servo.class, "back");
+
+        front.setPosition(frontPoint);
+        back.setPosition(backPoint);
+
+        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class,  camName), cameraMonitorViewId);
@@ -200,5 +227,27 @@ public class AutoAlignPipeline {
 
     public polePos getPos(){
         return pos;
+    }
+
+    public void align(){
+        while(!pos.equals(polePos.ON_POINT)) {
+            telemetry = "aligning, pos is: " + pos;
+            if (pos.equals(polePos.RIGHT)) {
+                bl.setPower(.3);
+                fl.setPower(.3);
+                br.setPower(-.3);
+                fr.setPower(-.3);
+            } else if (pos.equals(polePos.LEFT)) {
+                bl.setPower(-.3);
+                fl.setPower(-.3);
+                br.setPower(.3);
+                fr.setPower(.3);
+            } else {
+                bl.setPower(0);
+                fl.setPower(0);
+                br.setPower(0);
+                fr.setPower(0);
+            }
+        }
     }
 }

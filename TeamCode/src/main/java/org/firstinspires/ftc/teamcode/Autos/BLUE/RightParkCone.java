@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySequence;
+import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.MLToolChain;
 import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
 
@@ -23,64 +24,90 @@ import java.io.IOException;
 @Autonomous
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
-        DcMotor lift1, lift2;
+//        DcMotor lift1, lift2;
+//
+//        lift1 = hardwareMap.get(DcMotor.class, "Lift1");
+//        lift2 = hardwareMap.get(DcMotor.class, "Lift2");
+//
+//        lift1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        lift2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//
+//        lift1.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        lift1 = hardwareMap.get(DcMotor.class, "Lift1");
-        lift2 = hardwareMap.get(DcMotor.class, "Lift2");
-
-        lift1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lift2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        lift1.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        SignalSleeve detector = new SignalSleeve(hardwareMap, "Webcam 1");
-        SignalSleeve.DuckPos pos = SignalSleeve.DuckPos.ONE;
+        AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
         drive.setPoseEstimate(new Pose2d(-36,64.75, Math.toRadians(-90)));
 
         while(!isStarted()) {
-            lift1.setTargetPosition(-400);
-            lift2.setTargetPosition(lift1.getTargetPosition());
-            lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            lift2.setMode(lift1.getMode());
-            lift1.setPower(.75);
-            lift2.setPower(lift1.getPower());
-
-            pos = detector.getPosition();
-            telemetry.addData("Detecting", pos);
             telemetry.addLine("waiting for start");
-            telemetry.addData("liftPos", lift1.getCurrentPosition());
             telemetry.update();
         }
 
         waitForStart();
 
         TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .lineTo(new Vector2d(-36, 24))
-                .lineTo(new Vector2d(-36, 36))
-                .turn(Math.toRadians(90))
+                .lineTo(new Vector2d(-36, -12))
+                .lineTo(new Vector2d(-36, 12))
+                .turn(Math.toRadians(-90))
                 .build();
 
         drive.followTrajectorySequence(traj);
 
-        if(pos.equals(SignalSleeve.DuckPos.ONE)) {
-            Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-10, 38))
+        for(int i = 0; i < 3; i++){
+            Trajectory pickpup = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .splineTo(new Vector2d(-60,12), Math.toRadians(180))
                     .build();
 
-            drive.followTrajectory(trajL);
+            drive.followTrajectory(pickpup);
 
-            drive.turn(Math.toRadians(90));
-        }else if(pos.equals(SignalSleeve.DuckPos.TWO)) {
-        }else if(pos.equals(SignalSleeve.DuckPos.THREE)) {
-            Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-60, 38))
+//            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate(), true)
+////                    .splineTo(new Vector2d(-48,12), Math.toRadians(180))
+//                    .splineTo(new Vector2d(-36,12), Math.toRadians(-45))
+//                    .build();
+
+            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
+                    .turn(Math.toRadians(-45))
                     .build();
 
-            drive.followTrajectory(trajR);
+            drive.followTrajectorySequence(deliver);
+
+            pipeline.align();
+
+            Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .back(5)
+                    .build();
+
+            drive.followTrajectory(backup);
         }
+
+        TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .forward(5)
+                .turn(Math.toRadians(-45))
+                .lineToLinearHeading(new Pose2d(-36, 36, Math.toRadians(90)))
+                .turn(Math.toRadians(-90))
+                .build();
+
+        drive.followTrajectorySequence(park);
+
+//        if(pos.equals(SignalSleeve.DuckPos.ONE)) {
+//            Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
+//                    .lineTo(new Vector2d(-10, 38))
+//                    .build();
+//
+//            drive.followTrajectory(trajL);
+//
+//            drive.turn(Math.toRadians(90));
+//        }else if(pos.equals(SignalSleeve.DuckPos.TWO)) {
+//        }else if(pos.equals(SignalSleeve.DuckPos.THREE)) {
+//            Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
+//                    .lineTo(new Vector2d(-60, 38))
+//                    .build();
+//
+//            drive.followTrajectory(trajR);
+//        }
 
         try {
             File test = new File("/sdcard/FIRST/nums.txt");
