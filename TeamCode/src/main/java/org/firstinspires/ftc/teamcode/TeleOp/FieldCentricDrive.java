@@ -106,11 +106,13 @@ public class FieldCentricDrive extends LinearOpMode {
         TouchSensor Lift, armStop;
 
         double slowSpeed = .8;
+        int bottom = 0;
 
         boolean toggle = true;
         boolean toggle2 = true;
         boolean toggle3 = true;
         boolean armUp = false;
+        boolean intake = true;
 
         boolean isLiftUp = false;
         int robotPresetHeight = 1;
@@ -220,7 +222,7 @@ public class FieldCentricDrive extends LinearOpMode {
             rightBackDrive.setPower(v4 * slowSpeed);
 
             if(Lift1.getCurrentPosition() - bottom > 530){
-                slowSpeed = .5;
+                slowSpeed = .7;
             }else{
                 slowSpeed = .8;
             }
@@ -255,18 +257,50 @@ public class FieldCentricDrive extends LinearOpMode {
                 height = 1500;
                 fineTune = 0;
                 armUp = true;
+                intake = false;
+                bottom = 0;
             }else if(gamepad2.right_trigger > 0 && gamepad2.b){
                 height = 200;
                 fineTune = 0;
                 armUp = true;
+                intake = false;
+                bottom = 0;
             }else if(gamepad2.right_trigger > 0 && gamepad2.x){
                 height = 1000;
                 fineTune = 0;
                 armUp = true;
+                intake = false;
+                bottom = 0;
             }else if(gamepad2.right_trigger > 0 && gamepad2.a){
                 height = 500;
                 fineTune = 0;
                 armUp = false;
+                intake = true;
+                bottom = 0;
+            }else if(gamepad2.left_trigger > 0 && gamepad2.y){
+                height = 600;
+                fineTune = 0;
+                armUp = false;
+                intake = true;
+                bottom = 500;
+            }else if(gamepad2.left_trigger > 0 && gamepad2.x){
+                height = 500;
+                fineTune = 0;
+                armUp = false;
+                intake = true;
+                bottom = 400;
+            }else if(gamepad2.left_trigger > 0 && gamepad2.a){
+                height = 500;
+                fineTune = 0;
+                armUp = false;
+                intake = true;
+                bottom = 200;
+            }else if(gamepad2.left_trigger > 0 && gamepad2.b){
+                height = 600;
+                fineTune = 0;
+                armUp = false;
+                intake = true;
+                bottom = 0;
             }
 
 
@@ -308,7 +342,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
 
-            if(isLiftUp){
+            if(isLiftUp && (arm.getCurrentPosition() < -300 || intake)){
                 Lift1.setTargetPosition(height + fineTune);
                 Lift2.setTargetPosition(Lift1.getTargetPosition());
                 Lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -316,7 +350,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 Lift1.setPower(1);
                 Lift2.setPower(Lift1.getPower());
             }else{
-                Lift1.setTargetPosition(0);
+                Lift1.setTargetPosition(bottom);
                 Lift2.setTargetPosition(Lift1.getTargetPosition());
                 Lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 Lift2.setMode(Lift1.getMode());
