@@ -119,6 +119,7 @@ public class FieldCentricDrive extends LinearOpMode {
         int height = 0;
         int fineTune = 0;
         int armFineTune = 0;
+        double savedTime = 0;
 
         //blinkinLedDriver = hardwareMap.get(RevBlinkinLedDriver.class, "led");
         imu = hardwareMap.get(BNO055IMU.class, "imu");
@@ -230,6 +231,7 @@ public class FieldCentricDrive extends LinearOpMode {
             if(gamepad1.a){
                 Slurper.setPower(-1);
             }else if(gamepad1.y){
+                savedTime = runtime.seconds();
                 Slurper.setPower(1);
             }else if(gamepad1.b){
                 Slurper.setPower(0);
@@ -301,6 +303,14 @@ public class FieldCentricDrive extends LinearOpMode {
                 armUp = false;
                 intake = true;
                 bottom = 0;
+            }else if(savedTime+2 < runtime.seconds() && savedTime != 0){
+                height = 500;
+                fineTune = 0;
+                armUp = false;
+                intake = true;
+                bottom = 0;
+                Slurper.setPower(-1);
+                savedTime = 0;
             }
 
 
