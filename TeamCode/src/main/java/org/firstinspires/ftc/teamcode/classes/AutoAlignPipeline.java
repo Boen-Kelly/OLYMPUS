@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.teamcode.R;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -97,8 +96,9 @@ public class AutoAlignPipeline {
     class Threshold extends OpenCvPipeline {
 
         int stage = 0;
-        Mat hsv = new Mat();
-        Mat threshold = new Mat();
+        Mat yellow = new Mat();
+        Mat red = new Mat();
+        Mat blue = new Mat();
         Mat hierarchy = new Mat();
         Mat mask = new Mat();
         Mat filtered = new Mat();
@@ -131,19 +131,17 @@ public class AutoAlignPipeline {
         public Mat processFrame(Mat input){
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 
-            Scalar LOWER_BOUND = new Scalar(LH,LS,LV);
-            Scalar UPPER_BOUND = new Scalar(UH,US,UV);
+            final Scalar LOWER_BOUND_YELLOW = new Scalar(90,170,160);
+            final Scalar UPPER_BOUND_YELLOW = new Scalar(120,255,255);
 
-//            output = input;
-
-            Imgproc.cvtColor(input, hsv, Imgproc.COLOR_BGR2HSV);
+            Imgproc.cvtColor(input, yellow, Imgproc.COLOR_BGR2HSV);
 
 //            Core.extractChannel(hsv, h, 0); //90-100
 //            Core.extractChannel(hsv, s, 1); //170-255
 //            Core.extractChannel(hsv, v, 2); //230-200
 //            Core.inRange(v, LOWER_BOUND, UPPER_BOUND, v);
 
-            Core.inRange(hsv, LOWER_BOUND, UPPER_BOUND, mask);
+            Core.inRange(yellow, LOWER_BOUND_YELLOW, UPPER_BOUND_YELLOW, mask);
 
             Imgproc.morphologyEx(mask, open, Imgproc.MORPH_OPEN, kernel);
             Imgproc.morphologyEx(mask, closed, Imgproc.MORPH_OPEN, kernel);
@@ -197,11 +195,11 @@ public class AutoAlignPipeline {
 //                    telemetry = "active stage is coi" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
 //                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
                     Imgproc.circle(mask, new Point(x,y), 2, new Scalar(255,0,0),-1);
-                    return hsv;
+                    return yellow;
                 case 2:
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
 //                    Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
-                    Imgproc.circle(hsv, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    Imgproc.circle(yellow, new Point(x,y), 2, new Scalar(255,0,0),-1);
                     return mask;
                 case 3:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
