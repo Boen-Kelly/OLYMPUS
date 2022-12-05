@@ -234,7 +234,7 @@ public class FieldCentricDrive extends LinearOpMode {
             }
 
             if(armUp && isLiftUp){
-                arm.setTargetPosition(-3150 + armFineTune);
+                arm.setTargetPosition(-3400 + armFineTune);
             }else{
                 arm.setTargetPosition(0);
             }
