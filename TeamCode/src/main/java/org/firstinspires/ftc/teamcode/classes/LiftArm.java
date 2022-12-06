@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.classes;
 
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class LiftArm implements Runnable{
@@ -28,6 +29,8 @@ public class LiftArm implements Runnable{
         arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lift1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lift2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        slurper.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     public void run() {
@@ -54,6 +57,9 @@ public class LiftArm implements Runnable{
                 arm.setTargetPosition(0);
             }
 
+            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            arm.setPower(1);
+
             slurper.setPower(slurpPower);
         }
     }
@@ -74,6 +80,7 @@ public class LiftArm implements Runnable{
     }
 
     public void drop () {
+        isLiftUp = false;
         bottom = 0;
     }
 

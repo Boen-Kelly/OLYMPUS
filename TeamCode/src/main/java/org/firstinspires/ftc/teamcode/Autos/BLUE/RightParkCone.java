@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
+import org.firstinspires.ftc.teamcode.classes.LiftArm;
 import org.firstinspires.ftc.teamcode.classes.MLToolChain;
 import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
 
@@ -24,17 +25,9 @@ import java.io.IOException;
 @Autonomous
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
-//        DcMotor lift1, lift2;
-//
-//        lift1 = hardwareMap.get(DcMotor.class, "Lift1");
-//        lift2 = hardwareMap.get(DcMotor.class, "Lift2");
-//
-//        lift1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//        lift2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//
-//        lift1.setDirection(DcMotorSimple.Direction.REVERSE);
-
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
+        LiftArm lift = new LiftArm(hardwareMap);
+        Thread liftThread = new Thread(lift);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
@@ -46,6 +39,9 @@ public class RightParkCone extends LinearOpMode {
         }
 
         waitForStart();
+        liftThread.start();
+
+        lift.setSlurpPower(1);
 
         TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                 .lineTo(new Vector2d(-36, 7))
@@ -58,18 +54,37 @@ public class RightParkCone extends LinearOpMode {
         pipeline.align();
 
         Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*5, drive.getPoseEstimate().getY() - Math.sin(45)*5, Math.toRadians(135)))
+                .addTemporalMarker(0, () -> {
+                    lift.lift(1500,false);
+                })
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, Math.toRadians(135)))
                 .build();
 
         drive.followTrajectory(firstDeliver);
 
+        lift.setSlurpPower(-1);
+        sleep(500);
+
         for(int i = 0; i < 1; i++){
             TrajectorySequence pickup = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
-                    .lineTo(new Vector2d(-60,12))
+                    .addTemporalMarker(0, () -> {
+                        lift.drop();
+                        lift.setSlurpPower(0);
+                    })
+                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*11, drive.getPoseEstimate().getY() + Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+                    .addTemporalMarker(2, () -> {
+                        lift.lift(1000,true);
+                        lift.setSlurpPower(1);
+                    })
+                    .turn(Math.toRadians(45))
+                    .lineToLinearHeading(new Pose2d(-57,12, Math.toRadians(180)))
                     .build();
 
             drive.followTrajectorySequence(pickup);
+
+            lift.drop(500);
+            sleep(500);
+            lift.lift();
 
 //            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate(), true)
 ////                    .splineTo(new Vector2d(-48,12), Math.toRadians(180))
@@ -77,6 +92,9 @@ public class RightParkCone extends LinearOpMode {
 //                    .build();
 
             TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                    .addTemporalMarker(.5, () -> {
+                        lift.drop();
+                    })
                     .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
                     .turn(Math.toRadians(-45))
                     .build();
@@ -86,13 +104,22 @@ public class RightParkCone extends LinearOpMode {
             pipeline.align();
 
             Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*5, drive.getPoseEstimate().getY() - Math.sin(45)*5, Math.toRadians(135)))
+                    .addTemporalMarker(0, () -> {
+                        lift.lift(1500, false);
+                    })
+                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, Math.toRadians(135)))
                     .build();
 
             drive.followTrajectory(backup);
+
+            lift.setSlurpPower(-1);
         }
 
         TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .addTemporalMarker(0, () -> {
+                    lift.setSlurpPower(0);
+                    lift.drop();
+                })
                 .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(90)))
                 .lineToLinearHeading(new Pose2d(-36, 36, Math.toRadians(90)))
                 .turn(Math.toRadians(-90))
@@ -129,5 +156,7 @@ public class RightParkCone extends LinearOpMode {
             telemetry.update();
             e.printStackTrace();
         }
+
+        liftThread.interrupt();
     }
 }
