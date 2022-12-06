@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySequence;
+import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
+import org.firstinspires.ftc.teamcode.classes.LiftArm;
 import org.firstinspires.ftc.teamcode.classes.MLToolChain;
 import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
 
@@ -23,49 +25,134 @@ import java.io.IOException;
 @Autonomous
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
-        DcMotor lift1, lift2;
+        AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
+        AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
+        while(!pipeline.toString().equals("waiting for start")){
+            telemetry.addLine("waiting for OpenCV");
+            telemetry.update();
+        }
 
-        lift1 = hardwareMap.get(DcMotor.class, "Lift1");
-        lift2 = hardwareMap.get(DcMotor.class, "Lift2");
-
-        lift1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lift2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        lift1.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        SignalSleeve detector = new SignalSleeve(hardwareMap, "Webcam 1");
-        SignalSleeve.DuckPos pos = SignalSleeve.DuckPos.ONE;
+        LiftArm lift = new LiftArm(hardwareMap);
+        Thread liftThread = new Thread(lift);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
         drive.setPoseEstimate(new Pose2d(-36,64.75, Math.toRadians(-90)));
 
-        while(!isStarted()) {
-            lift1.setTargetPosition(-400);
-            lift2.setTargetPosition(lift1.getTargetPosition());
-            lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            lift2.setMode(lift1.getMode());
-            lift1.setPower(.75);
-            lift2.setPower(lift1.getPower());
+        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .addTemporalMarker(0, () -> {
+                    lift.setSlurpPower(1);
+                    lift.lift(0, false);
+                })
+                .lineTo(new Vector2d(-36, 7))
+                .lineTo(new Vector2d(-36, 12))
+                .turn(Math.toRadians(-135))
+                .addTemporalMarker(3, () -> {
+                    lift.drop();
+                })
+                .build();
 
-            pos = detector.getPosition();
-            telemetry.addData("Detecting", pos);
+        while(!isStarted()) {
+            if(gamepad1.a){
+                pipeline.useFrontCam();
+            }else if(gamepad1.b){
+                pipeline.useBackCam();
+            }
+
+            sleevePos = pipeline.getSleevePosition();
+
+            telemetry.addData("Sleeve position", pipeline.getSleevePosition());
             telemetry.addLine("waiting for start");
-            telemetry.addData("liftPos", lift1.getCurrentPosition());
             telemetry.update();
         }
 
         waitForStart();
-
-        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .lineTo(new Vector2d(-36, 24))
-                .lineTo(new Vector2d(-36, 36))
-                .turn(Math.toRadians(90))
-                .build();
+        pipeline.useBackCam();
+        liftThread.start();
 
         drive.followTrajectorySequence(traj);
 
-        if(pos.equals(SignalSleeve.DuckPos.ONE)) {
+        pipeline.align();
+
+        Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
+                .addTemporalMarker(0, () -> {
+                    lift.lift(1500,false);
+                })
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+                .build();
+
+        drive.followTrajectory(firstDeliver);
+
+        lift.setSlurpPower(-1);
+        sleep(500);
+
+//        for(int i = 0; i < 1; i++){
+//            TrajectorySequence pickup = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+//                    .addTemporalMarker(0, () -> {
+//                        lift.lift(0, false);
+//                        lift.setSlurpPower(0);
+//                    })
+//                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*11, drive.getPoseEstimate().getY() + Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+//                    .addTemporalMarker(2, () -> {
+//                        lift.lift(1000,true);
+//                        lift.setSlurpPower(1);
+//                    })
+//                    .turn(Math.toRadians(45))
+//                    .lineToLinearHeading(new Pose2d(-59,12, Math.toRadians(180)))
+//                    .build();
+//
+//            drive.followTrajectorySequence(pickup);
+//
+//            lift.drop(400);
+//            sleep(1000);
+//            lift.lift();
+//
+////            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate(), true)
+//////                    .splineTo(new Vector2d(-48,12), Math.toRadians(180))
+////                    .splineTo(new Vector2d(-36,12), Math.toRadians(-45))
+////                    .build();
+//
+//            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+//                    .addTemporalMarker(.5, () -> {
+//                        lift.drop();
+//                    })
+//                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
+//                    .turn(Math.toRadians(-45))
+//                    .build();
+//
+//            drive.followTrajectorySequence(deliver);
+//
+//            pipeline.align();
+//
+//            Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
+//                    .addTemporalMarker(0, () -> {
+//                        lift.lift(1500, false);
+//                    })
+//                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+//                    .build();
+//
+//            drive.followTrajectory(backup);
+//
+//            lift.setSlurpPower(-1);
+//        }
+
+        TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .addTemporalMarker(1, () -> {
+                    lift.setSlurpPower(0);
+                    lift.lift(0, false);
+                })
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*11, drive.getPoseEstimate().getY() + Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+                .turn(Math.toRadians(-45))
+                .lineToLinearHeading(new Pose2d(-36, 36, Math.toRadians(90)))
+                .addTemporalMarker(2, () -> {
+                    lift.drop();
+                })
+                .turn(Math.toRadians(-90))
+                .build();
+
+        drive.followTrajectorySequence(park);
+
+        if(sleevePos.equals(AutoAlignPipeline.DuckPos.ONE)) {
             Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .lineTo(new Vector2d(-10, 38))
                     .build();
@@ -73,8 +160,8 @@ public class RightParkCone extends LinearOpMode {
             drive.followTrajectory(trajL);
 
             drive.turn(Math.toRadians(90));
-        }else if(pos.equals(SignalSleeve.DuckPos.TWO)) {
-        }else if(pos.equals(SignalSleeve.DuckPos.THREE)) {
+        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.TWO)) {
+        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.THREE)) {
             Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .lineTo(new Vector2d(-60, 38))
                     .build();
@@ -94,5 +181,7 @@ public class RightParkCone extends LinearOpMode {
             telemetry.update();
             e.printStackTrace();
         }
+
+        liftThread.interrupt();
     }
 }
