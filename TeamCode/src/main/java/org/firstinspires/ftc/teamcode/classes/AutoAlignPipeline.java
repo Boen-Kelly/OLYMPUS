@@ -21,14 +21,18 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
+import org.openftc.easyopencv.OpenCvSwitchableWebcam;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Config
 public class AutoAlignPipeline {
-    OpenCvCamera webcam;
-    Threshold thresh;
+    WebcamName backCam;
+    WebcamName frontCam;
+    OpenCvSwitchableWebcam switchableWebcam;
+
+    PoleDetector poleDetector;
     String telemetry = "waiting for input";
     public static Rect midBox = new Rect(185,115,25,25);
     public static int threshVal = 128;
@@ -38,7 +42,7 @@ public class AutoAlignPipeline {
 
     public static int x = 10, y = 10;
     public static double boxWidth = 40;
-    public static double frontPoint = .75, backPoint = .76;
+    public static double frontPoint = .84, backPoint = .77;
     double startTime = 0;
 
     polePos pos = polePos.ON_POINT;
@@ -47,6 +51,13 @@ public class AutoAlignPipeline {
     Servo front, back;
 
     ElapsedTime time = new ElapsedTime();
+
+    DuckPos position;
+    public static Rect redRect = new Rect(90,270,15,15);
+    public static Rect blueRect = new Rect(90,255,15,15);
+    public static Rect yellowRect = new Rect(90,285,15,15);
+    public static int threshRed = 145, threshBlue = 150, threshYellow = 200;
+    SleeveDetector sleeveDetector;
 
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
@@ -70,18 +81,22 @@ public class AutoAlignPipeline {
         fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        backCam = hardwareMap.get(WebcamName.class, "Webcam 2");
+        frontCam = hardwareMap.get(WebcamName.class, "Webcam 1");
+
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class,  camName), cameraMonitorViewId);
+        switchableWebcam = OpenCvCameraFactory.getInstance().createSwitchableWebcam(cameraMonitorViewId, frontCam, backCam);
 
-        thresh = new Threshold();
-        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        poleDetector = new PoleDetector();
+        sleeveDetector = new SleeveDetector();
+        switchableWebcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                webcam.setPipeline(thresh);
-                webcam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+                switchableWebcam.setPipeline(sleeveDetector);
+                switchableWebcam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
 
             @Override
@@ -90,10 +105,11 @@ public class AutoAlignPipeline {
         }
         });
 
+
             telemetry = "waiting for start";
     }
 
-    class Threshold extends OpenCvPipeline {
+    class PoleDetector extends OpenCvPipeline {
 
         int stage = 0;
         Mat yellow = new Mat();
@@ -217,6 +233,167 @@ public class AutoAlignPipeline {
         }
     }
 
+    class SleeveDetector extends OpenCvPipeline {
+
+        int stage = 0;
+        Mat ycrcb = new Mat();
+        Mat red = new Mat();
+        Mat yellow = new Mat();
+        Mat blue = new Mat();
+        Mat thresholdRed = new Mat();
+        Mat thresholdYellow = new Mat();
+        Mat thresholdBlue = new Mat();
+
+
+        double avg1, avg2, avg3;
+
+        @Override
+        public void onViewportTapped() {
+            stage ++;
+
+            if(stage > 6){
+                stage = 0;
+            }
+        }
+
+        @Override
+        public Mat processFrame(Mat input){
+//            telemetry = "pre-init";
+//
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+//            telemetry = "created submats";
+//
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+            Imgproc.cvtColor(input, ycrcb, Imgproc.COLOR_RGB2YCrCb);
+            Core.extractChannel(ycrcb, yellow, 0);
+            Core.extractChannel(ycrcb, red, 1);
+            Core.extractChannel(ycrcb, blue, 2);
+
+//            telemetry = "calculated channels";
+//
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+            Imgproc.threshold(yellow, thresholdYellow, threshYellow, 255, Imgproc.THRESH_BINARY);
+            Imgproc.threshold(red, thresholdRed, threshRed, 255, Imgproc.THRESH_BINARY);
+            Imgproc.threshold(blue, thresholdBlue, threshBlue, 255, Imgproc.THRESH_BINARY);
+
+//            telemetry = "thresholded";
+//
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+
+            Imgproc.rectangle(thresholdBlue, blueRect,new Scalar(255,0,0), 2);
+            Imgproc.rectangle(thresholdRed, redRect,new Scalar(255,0,0), 2);
+            Imgproc.rectangle(thresholdYellow, yellowRect,new Scalar(255,0,0), 2);
+
+//            telemetry = "drew rectangles";
+//
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+            Mat section1 = thresholdRed.submat(blueRect);
+            Mat section2 = thresholdYellow.submat(redRect);
+            Mat section3 = thresholdBlue.submat(yellowRect);
+
+//            telemetry = "created sections";
+//
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+
+            avg1 = Core.mean(section1).val[0];
+            avg2 = Core.mean(section2).val[0];
+            avg3 = Core.mean(section3).val[0];
+
+//            telemetry = "calculated avgs";
+//
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+            if(avg1 > avg2){
+                if(avg1 > avg3){
+                    position = DuckPos.ONE;
+                }else{
+                    position = DuckPos.THREE;
+                }
+            }else{
+                if(avg2 > avg3){
+                    position = DuckPos.TWO;
+                }else{
+                    position = DuckPos.THREE;
+                }
+            }
+
+            switch (stage){
+                case 0:
+                    telemetry = "active stage is ycrcb" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
+                    Imgproc.rectangle(ycrcb, blueRect,new Scalar(255,0,0), 2);
+                    Imgproc.rectangle(ycrcb, redRect,new Scalar(255,0,0), 2);
+                    return ycrcb;
+                case 1:
+                    telemetry = "active stage is coi" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
+                    Imgproc.rectangle(blue, blueRect,new Scalar(255,0,0), 2);
+                    return blue;
+                case 2:
+                    telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
+                    Imgproc.rectangle(thresholdBlue, blueRect,new Scalar(255,0,0), 2);
+                    return thresholdBlue;
+                case 3:
+                    telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
+                    Imgproc.rectangle(red, redRect,new Scalar(255,0,0), 2);
+                    return red;
+                case 4:
+                    Imgproc.rectangle(thresholdRed, redRect,new Scalar(255,0,0), 2);
+                    return thresholdRed;
+                case 5:
+                    Imgproc.rectangle(yellow, yellowRect,new Scalar(255,0,0), 2);
+                    return yellow;
+                case 6:
+                    Imgproc.rectangle(thresholdYellow, yellowRect,new Scalar(255,0,0), 2);
+                    return thresholdYellow;
+            }
+            return input;
+        }
+    }
+
+    public enum DuckPos{
+        ONE,
+        TWO,
+        THREE
+    }
+
+    public DuckPos getSleevePosition(){
+        return position;
+    }
+
+
     public String toString(){
         return telemetry;
     }
@@ -227,22 +404,22 @@ public class AutoAlignPipeline {
         ON_POINT
     }
 
-    public polePos getPos(){
+    public polePos getPolePos(){
         return pos;
     }
 
     public void align(){
         time.reset();
-        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 1000) {
+        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
             telemetry = "aligning, pos is: " + pos;
             if (pos.equals(polePos.RIGHT)) {
-                startTime = time.time();
+                startTime = time.milliseconds();
                 bl.setPower(.1);
                 fl.setPower(.1);
                 br.setPower(-.1);
                 fr.setPower(-.1);
             } else if (pos.equals(polePos.LEFT)) {
-                startTime = time.time();
+                startTime = time.milliseconds();
                 bl.setPower(-.1);
                 fl.setPower(-.1);
                 br.setPower(.1);
@@ -254,5 +431,15 @@ public class AutoAlignPipeline {
                 fr.setPower(0);
             }
         }
+    }
+
+    public void useFrontCam(){
+        switchableWebcam.setActiveCamera(frontCam);
+        switchableWebcam.setPipeline(sleeveDetector);
+    }
+
+    public void useBackCam() {
+        switchableWebcam.setActiveCamera(backCam);
+        switchableWebcam.setPipeline(poleDetector);
     }
 }

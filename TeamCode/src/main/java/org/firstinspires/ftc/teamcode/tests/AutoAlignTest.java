@@ -36,12 +36,12 @@ public class AutoAlignTest extends LinearOpMode {
 
         while (opModeIsActive()){
 
-            if(pipeline.getPos().equals(AutoAlignPipeline.polePos.RIGHT)){
+            if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.RIGHT)){
                 bl.setPower(.3);
                 fl.setPower(.3);
                 br.setPower(-.3);
                 fr.setPower(-.3);
-            }else if(pipeline.getPos().equals(AutoAlignPipeline.polePos.LEFT)){
+            }else if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.LEFT)){
                 bl.setPower(-.3);
                 fl.setPower(-.3);
                 br.setPower(.3);

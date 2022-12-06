@@ -25,7 +25,13 @@ import java.io.IOException;
 @Autonomous
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
+        AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
+        while(!pipeline.toString().equals("waiting for start")){
+            telemetry.addLine("waiting for OpenCV");
+            telemetry.update();
+        }
+
         LiftArm lift = new LiftArm(hardwareMap);
         Thread liftThread = new Thread(lift);
 
@@ -34,20 +40,35 @@ public class RightParkCone extends LinearOpMode {
         drive.setPoseEstimate(new Pose2d(-36,64.75, Math.toRadians(-90)));
 
         TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .addTemporalMarker(0, () -> {
+                    lift.setSlurpPower(1);
+                    lift.lift(0, false);
+                })
                 .lineTo(new Vector2d(-36, 7))
                 .lineTo(new Vector2d(-36, 12))
                 .turn(Math.toRadians(-135))
+                .addTemporalMarker(3, () -> {
+                    lift.drop();
+                })
                 .build();
 
         while(!isStarted()) {
+            if(gamepad1.a){
+                pipeline.useFrontCam();
+            }else if(gamepad1.b){
+                pipeline.useBackCam();
+            }
+
+            sleevePos = pipeline.getSleevePosition();
+
+            telemetry.addData("Sleeve position", pipeline.getSleevePosition());
             telemetry.addLine("waiting for start");
             telemetry.update();
         }
 
         waitForStart();
+        pipeline.useBackCam();
         liftThread.start();
-
-        lift.setSlurpPower(1);
 
         drive.followTrajectorySequence(traj);
 
@@ -131,22 +152,22 @@ public class RightParkCone extends LinearOpMode {
 
         drive.followTrajectorySequence(park);
 
-//        if(pos.equals(SignalSleeve.DuckPos.ONE)) {
-//            Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
-//                    .lineTo(new Vector2d(-10, 38))
-//                    .build();
-//
-//            drive.followTrajectory(trajL);
-//
-//            drive.turn(Math.toRadians(90));
-//        }else if(pos.equals(SignalSleeve.DuckPos.TWO)) {
-//        }else if(pos.equals(SignalSleeve.DuckPos.THREE)) {
-//            Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
-//                    .lineTo(new Vector2d(-60, 38))
-//                    .build();
-//
-//            drive.followTrajectory(trajR);
-//        }
+        if(sleevePos.equals(AutoAlignPipeline.DuckPos.ONE)) {
+            Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .lineTo(new Vector2d(-10, 38))
+                    .build();
+
+            drive.followTrajectory(trajL);
+
+            drive.turn(Math.toRadians(90));
+        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.TWO)) {
+        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.THREE)) {
+            Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .lineTo(new Vector2d(-60, 38))
+                    .build();
+
+            drive.followTrajectory(trajR);
+        }
 
         try {
             File test = new File("/sdcard/FIRST/nums.txt");
