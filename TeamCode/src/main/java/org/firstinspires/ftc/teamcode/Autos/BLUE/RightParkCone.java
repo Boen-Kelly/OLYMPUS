@@ -33,6 +33,12 @@ public class RightParkCone extends LinearOpMode {
 
         drive.setPoseEstimate(new Pose2d(-36,64.75, Math.toRadians(-90)));
 
+        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .lineTo(new Vector2d(-36, 7))
+                .lineTo(new Vector2d(-36, 12))
+                .turn(Math.toRadians(-135))
+                .build();
+
         while(!isStarted()) {
             telemetry.addLine("waiting for start");
             telemetry.update();
@@ -43,12 +49,6 @@ public class RightParkCone extends LinearOpMode {
 
         lift.setSlurpPower(1);
 
-        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .lineTo(new Vector2d(-36, 7))
-                .lineTo(new Vector2d(-36, 12))
-                .turn(Math.toRadians(-135))
-                .build();
-
         drive.followTrajectorySequence(traj);
 
         pipeline.align();
@@ -57,7 +57,7 @@ public class RightParkCone extends LinearOpMode {
                 .addTemporalMarker(0, () -> {
                     lift.lift(1500,false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, Math.toRadians(135)))
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -65,63 +65,67 @@ public class RightParkCone extends LinearOpMode {
         lift.setSlurpPower(-1);
         sleep(500);
 
-        for(int i = 0; i < 1; i++){
-            TrajectorySequence pickup = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                    .addTemporalMarker(0, () -> {
-                        lift.drop();
-                        lift.setSlurpPower(0);
-                    })
-                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*11, drive.getPoseEstimate().getY() + Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
-                    .addTemporalMarker(2, () -> {
-                        lift.lift(1000,true);
-                        lift.setSlurpPower(1);
-                    })
-                    .turn(Math.toRadians(45))
-                    .lineToLinearHeading(new Pose2d(-57,12, Math.toRadians(180)))
-                    .build();
-
-            drive.followTrajectorySequence(pickup);
-
-            lift.drop(500);
-            sleep(500);
-            lift.lift();
-
-//            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate(), true)
-////                    .splineTo(new Vector2d(-48,12), Math.toRadians(180))
-//                    .splineTo(new Vector2d(-36,12), Math.toRadians(-45))
+//        for(int i = 0; i < 1; i++){
+//            TrajectorySequence pickup = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+//                    .addTemporalMarker(0, () -> {
+//                        lift.lift(0, false);
+//                        lift.setSlurpPower(0);
+//                    })
+//                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*11, drive.getPoseEstimate().getY() + Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+//                    .addTemporalMarker(2, () -> {
+//                        lift.lift(1000,true);
+//                        lift.setSlurpPower(1);
+//                    })
+//                    .turn(Math.toRadians(45))
+//                    .lineToLinearHeading(new Pose2d(-59,12, Math.toRadians(180)))
 //                    .build();
-
-            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                    .addTemporalMarker(.5, () -> {
-                        lift.drop();
-                    })
-                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
-                    .turn(Math.toRadians(-45))
-                    .build();
-
-            drive.followTrajectorySequence(deliver);
-
-            pipeline.align();
-
-            Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .addTemporalMarker(0, () -> {
-                        lift.lift(1500, false);
-                    })
-                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, Math.toRadians(135)))
-                    .build();
-
-            drive.followTrajectory(backup);
-
-            lift.setSlurpPower(-1);
-        }
+//
+//            drive.followTrajectorySequence(pickup);
+//
+//            lift.drop(400);
+//            sleep(1000);
+//            lift.lift();
+//
+////            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate(), true)
+//////                    .splineTo(new Vector2d(-48,12), Math.toRadians(180))
+////                    .splineTo(new Vector2d(-36,12), Math.toRadians(-45))
+////                    .build();
+//
+//            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+//                    .addTemporalMarker(.5, () -> {
+//                        lift.drop();
+//                    })
+//                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
+//                    .turn(Math.toRadians(-45))
+//                    .build();
+//
+//            drive.followTrajectorySequence(deliver);
+//
+//            pipeline.align();
+//
+//            Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
+//                    .addTemporalMarker(0, () -> {
+//                        lift.lift(1500, false);
+//                    })
+//                    .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+//                    .build();
+//
+//            drive.followTrajectory(backup);
+//
+//            lift.setSlurpPower(-1);
+//        }
 
         TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .addTemporalMarker(0, () -> {
+                .addTemporalMarker(1, () -> {
                     lift.setSlurpPower(0);
+                    lift.lift(0, false);
+                })
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*11, drive.getPoseEstimate().getY() + Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+                .turn(Math.toRadians(-45))
+                .lineToLinearHeading(new Pose2d(-36, 36, Math.toRadians(90)))
+                .addTemporalMarker(2, () -> {
                     lift.drop();
                 })
-                .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(90)))
-                .lineToLinearHeading(new Pose2d(-36, 36, Math.toRadians(90)))
                 .turn(Math.toRadians(-90))
                 .build();
 
