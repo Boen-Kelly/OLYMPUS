@@ -221,10 +221,10 @@ public class FieldCentricDrive extends LinearOpMode {
             leftBackDrive.setPower(v3 * slowSpeed);
             rightBackDrive.setPower(v4 * slowSpeed);
 
-            if(Lift1.getCurrentPosition() - bottom > 530){
-                slowSpeed = .7;
+            if(isLiftUp){
+                slowSpeed = .75 ;
             }else{
-                slowSpeed = .8;
+                slowSpeed = 1;
             }
 
             if(gamepad1.a){
@@ -294,11 +294,10 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = false;
                 bottom = 0;
-            }else if(savedTime+2 < runtime.seconds() && savedTime != 0){
+            }else if(savedTime+0.5 < runtime.seconds() && savedTime != 0){
                 height = 500;
                 fineTune = 0;
                 armUp = false;
-                intake = true;
                 bottom = 0;
                 Slurper.setPower(-1);
                 savedTime = 0;

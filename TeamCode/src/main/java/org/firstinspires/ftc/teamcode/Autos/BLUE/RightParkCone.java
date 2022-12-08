@@ -44,7 +44,7 @@ public class RightParkCone extends LinearOpMode {
                     lift.setSlurpPower(1);
                     lift.lift(0, false);
                 })
-                .lineTo(new Vector2d(-36, 7))
+                .lineTo(new Vector2d(-36, -15))
                 .lineTo(new Vector2d(-36, 12))
                 .turn(Math.toRadians(-135))
                 .addTemporalMarker(3, () -> {
