@@ -27,6 +27,9 @@ public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
+
+        double heading1, heading2;
+
         while(!pipeline.toString().equals("waiting for start")){
             telemetry.addLine("waiting for OpenCV");
             telemetry.update();
@@ -71,14 +74,23 @@ public class RightParkCone extends LinearOpMode {
         liftThread.start();
 
         drive.followTrajectorySequence(traj);
+//        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
 
         pipeline.align();
+
+        drive.update();
+//        heading2 = Math.toDegrees(drive.getPoseEstimate().getHeading());
+
+//        telemetry.addData("heading1", heading1);
+//        telemetry.addData("heading2", heading2);
+//        telemetry.update();
+//        sleep(1000);
 
         Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
                     lift.lift(1500,false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*11, drive.getPoseEstimate().getY() - Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*13, drive.getPoseEstimate().getY() - Math.sin(45)*13, drive.getPoseEstimate().getHeading()))
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -141,9 +153,9 @@ public class RightParkCone extends LinearOpMode {
                     lift.setSlurpPower(0);
                     lift.lift(0, false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*11, drive.getPoseEstimate().getY() + Math.sin(45)*11, drive.getPoseEstimate().getHeading()))
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*13, drive.getPoseEstimate().getY() + Math.sin(45)*13, drive.getPoseEstimate().getHeading()))
                 .turn(Math.toRadians(-45))
-                .lineToLinearHeading(new Pose2d(-36, 36, Math.toRadians(90)))
+                .lineToLinearHeading(new Pose2d(-36, 32, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {
                     lift.drop();
                 })
@@ -154,7 +166,7 @@ public class RightParkCone extends LinearOpMode {
 
         if(sleevePos.equals(AutoAlignPipeline.DuckPos.ONE)) {
             Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-10, 38))
+                    .lineTo(new Vector2d(-14, 32))
                     .build();
 
             drive.followTrajectory(trajL);

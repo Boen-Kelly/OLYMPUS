@@ -275,25 +275,25 @@ public class FieldCentricDrive extends LinearOpMode {
                 armUp = false;
                 bottom = 0;
             }else if(gamepad2.left_trigger > 0 && gamepad2.y){
-                height = 600;
+                height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 500;
             }else if(gamepad2.left_trigger > 0 && gamepad2.x){
-                height = 500;
+                height = 950;
                 fineTune = 0;
                 armUp = false;
-                bottom = 400;
-            }else if(gamepad2.left_trigger > 0 && gamepad2.a){
-                height = 500;
-                fineTune = 0;
-                armUp = false;
-                bottom = 200;
+                bottom = 450;
             }else if(gamepad2.left_trigger > 0 && gamepad2.b){
-                height = 600;
+                height = 950;
                 fineTune = 0;
                 armUp = false;
-                bottom = 0;
+                bottom = 350;
+            }else if(gamepad2.left_trigger > 0 && gamepad2.a){
+                height = 950;
+                fineTune = 0;
+                armUp = false;
+                bottom = 250;
             }else if(savedTime+0.5 < runtime.seconds() && savedTime != 0){
                 height = 500;
                 fineTune = 0;
