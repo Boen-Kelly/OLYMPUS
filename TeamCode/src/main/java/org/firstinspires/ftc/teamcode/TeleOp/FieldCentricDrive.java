@@ -265,7 +265,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 armUp = true;
                 bottom = 0;
             }else if(gamepad2.right_trigger > 0 && gamepad2.x){
-                height = 800;
+                height = 950;
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;

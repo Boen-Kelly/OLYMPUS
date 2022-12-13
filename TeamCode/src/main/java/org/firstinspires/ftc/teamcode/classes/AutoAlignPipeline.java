@@ -53,10 +53,10 @@ public class AutoAlignPipeline {
     ElapsedTime time = new ElapsedTime();
 
     DuckPos position;
-    public static Rect redRect = new Rect(90,270,15,15);
-    public static Rect blueRect = new Rect(90,255,15,15);
-    public static Rect yellowRect = new Rect(90,285,15,15);
-    public static int threshRed = 145, threshBlue = 150, threshYellow = 200;
+    public static Rect redRect = new Rect(105,245,15,15);
+    public static Rect blueRect = new Rect(105,245,15,15);
+    public static Rect yellowRect = new Rect(105,245,15,15);
+    public static int threshRed = 145, threshBlue = 150, threshYellow = 160;
     SleeveDetector sleeveDetector;
 
 
