@@ -81,6 +81,8 @@ public class FieldCentricDrive extends LinearOpMode {
     private DcMotor rightBackDrive = null;
     private DcMotor rightFrontDrive = null;
 
+    RevBlinkinLedDriver leds;
+
     int bottom = 0;
 
     BNO055IMU imu;
@@ -149,6 +151,8 @@ public class FieldCentricDrive extends LinearOpMode {
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
+        leds = hardwareMap.get(RevBlinkinLedDriver.class, "led");
+
         leftBackDrive  = hardwareMap.get(DcMotor.class, "bl");
         leftFrontDrive  = hardwareMap.get(DcMotor.class, "fl");
         rightBackDrive = hardwareMap.get(DcMotor.class, "br");
@@ -259,21 +263,25 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.SINELON_PARTY_PALETTE);
             }else if(gamepad2.right_trigger > 0 && gamepad2.b){
                 height = 200;
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.YELLOW);
             }else if(gamepad2.right_trigger > 0 && gamepad2.x){
                 height = 950;
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
             }else if(gamepad2.right_trigger > 0 && gamepad2.a){
                 height = 500;
                 fineTune = 0;
                 armUp = false;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
             }else if(gamepad2.left_trigger > 0 && gamepad2.y){
                 height = 950;
                 fineTune = 0;
@@ -301,6 +309,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 bottom = 0;
                 Slurper.setPower(-1);
                 savedTime = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
             }
 
 
