@@ -45,7 +45,6 @@ public class AutoAlignPipeline {
     public static double frontPoint = .84, backPoint = .75;
     double startTime = 0;
 
-    polePos pos = polePos.ON_POINT;
 
     DcMotor bl, br, fl, fr;
     Servo front, back;
@@ -123,6 +122,7 @@ public class AutoAlignPipeline {
         Mat closed = new Mat();
 
         Rect boundingRect = new Rect();
+        Rect bigRect = new Rect();
 
         Point top, bottom;
 
@@ -173,14 +173,15 @@ public class AutoAlignPipeline {
 
                 if(boundingRect.width > maxWidth){
                     maxWidth = boundingRect.width;
-
-                    Imgproc.rectangle(input, boundingRect, new Scalar(255, 0, 0), 2);
-
-                    top = new Point(boundingRect.x + boundingRect.width * .5, boundingRect.y);
-                    bottom = new Point(boundingRect.x + boundingRect.width * .5, boundingRect.y + boundingRect.height);
-
-                    Imgproc.line(input, top, bottom, new Scalar(255, 0, 0));
+                    bigRect = boundingRect;
                 }
+            }
+
+            if(bigRect != null) {
+                Imgproc.rectangle(input, bigRect, new Scalar(255, 0, 0), 2);
+                top = new Point(bigRect.x + bigRect.width * .5, bigRect.y);
+                bottom = new Point(bigRect.x + bigRect.width * .5, bigRect.y + bigRect.height);
+                Imgproc.line(input, top, bottom, new Scalar(255, 0, 0));
             }
 
             if(top != null) {
@@ -190,17 +191,9 @@ public class AutoAlignPipeline {
 
             Imgproc.rectangle(input,new Point(120-boxWidth/2,5), new Point(120+boxWidth/2,15), new Scalar(0,0,255), 2);
 
-            if(distance > boxWidth/2){
-                pos = polePos.RIGHT;
-            }else if(distance < -boxWidth/2){
-                pos = polePos.LEFT;
-            }else{
-                pos = polePos.ON_POINT;
-            }
+            telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance;
 
-            telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance + "\npos: " + pos;
-
-            maxWidth = 0;
+            maxWidth = Double.MIN_VALUE;
 
             switch (stage){
                 case 0:
@@ -398,38 +391,9 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
-    public enum polePos{
-        LEFT,
-        RIGHT,
-        ON_POINT
-    }
-
-    public polePos getPolePos(){
-        return pos;
-    }
-
     public void align(){
         time.reset();
         while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
-            telemetry = "aligning, pos is: " + pos;
-            if (pos.equals(polePos.RIGHT)) {
-                startTime = time.milliseconds();
-                bl.setPower(.1);
-                fl.setPower(.1);
-                br.setPower(-.1);
-                fr.setPower(-.1);
-            } else if (pos.equals(polePos.LEFT)) {
-                startTime = time.milliseconds();
-                bl.setPower(-.1);
-                fl.setPower(-.1);
-                br.setPower(.1);
-                fr.setPower(.1);
-            } else if(pos.equals(polePos.ON_POINT)){
-                bl.setPower(0);
-                fl.setPower(0);
-                br.setPower(0);
-                fr.setPower(0);
-            }
         }
     }
 
