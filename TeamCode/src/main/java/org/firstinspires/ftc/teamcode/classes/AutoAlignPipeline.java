@@ -41,10 +41,13 @@ public class AutoAlignPipeline {
     public static double UH = 120, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
-    public static double boxWidth = 40;
+    public static double boxWidth = 20;
     public static double frontPoint = .84, backPoint = .75;
     double startTime = 0;
+    double distance = 0;
+    public static double rate = .0005;
 
+    boolean usingFrontCam = true;
 
     DcMotor bl, br, fl, fr;
     Servo front, back;
@@ -111,15 +114,24 @@ public class AutoAlignPipeline {
     class PoleDetector extends OpenCvPipeline {
 
         int stage = 0;
-        Mat yellow = new Mat();
-        Mat red = new Mat();
-        Mat blue = new Mat();
+        Mat hsv = new Mat();
+        Mat h = new Mat();
+        Mat s = new Mat();
+        Mat v = new Mat();
         Mat hierarchy = new Mat();
-        Mat mask = new Mat();
-        Mat filtered = new Mat();
+        Mat maskYellow = new Mat();
+        Mat maskRed = new Mat();
+        Mat maskBlue = new Mat();
+        Mat filteredYellow = new Mat();
+        Mat filteredRed = new Mat();
+        Mat filteredBlue = new Mat();
         Mat output = new Mat();
-        Mat open = new Mat();
-        Mat closed = new Mat();
+        Mat openYellow = new Mat();
+        Mat closedYellow = new Mat();
+        Mat openRed = new Mat();
+        Mat closedRed = new Mat();
+        Mat openBlue = new Mat();
+        Mat closedBlue = new Mat();
 
         Rect boundingRect = new Rect();
         Rect bigRect = new Rect();
@@ -129,7 +141,6 @@ public class AutoAlignPipeline {
         Mat kernel = new Mat(12,12, CvType.CV_8UC1);
 
         double maxWidth = 0;
-        double distance = 0;
 
 
         double avg1, avg2;
@@ -138,7 +149,7 @@ public class AutoAlignPipeline {
         public void onViewportTapped() {
             stage ++;
 
-            if(stage > 6){
+            if(stage > 4){
                 stage = 0;
             }
         }
@@ -147,24 +158,43 @@ public class AutoAlignPipeline {
         public Mat processFrame(Mat input){
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 
-            final Scalar LOWER_BOUND_YELLOW = new Scalar(90,170,160);
-            final Scalar UPPER_BOUND_YELLOW = new Scalar(120,255,255);
+            final Scalar LOWER_BOUND_YELLOW = new Scalar(LH,LS,LV);
+            final Scalar UPPER_BOUND_YELLOW = new Scalar(UH,US,UV);
+            final Scalar LOWER_BOUND_RED = new Scalar(110,120,150);//110, 120, 150,
+            final Scalar UPPER_BOUND_RED = new Scalar(150,255,255);
+            Scalar LOWER_BOUND_BLUE = new Scalar(0,100,140);
+            Scalar UPPER_BOUND_BLUE = new Scalar(30,255,255);
 
-            Imgproc.cvtColor(input, yellow, Imgproc.COLOR_BGR2HSV);
 
-//            Core.extractChannel(hsv, h, 0); //90-100
-//            Core.extractChannel(hsv, s, 1); //170-255
-//            Core.extractChannel(hsv, v, 2); //230-200
-//            Core.inRange(v, LOWER_BOUND, UPPER_BOUND, v);
+            Imgproc.cvtColor(input, hsv, Imgproc.COLOR_BGR2HSV);
 
-            Core.inRange(yellow, LOWER_BOUND_YELLOW, UPPER_BOUND_YELLOW, mask);
+//            Core.extractChannel(hsv, h, 0);
+//            Core.extractChannel(hsv, s, 1);
+//            Core.extractChannel(hsv, v, 2);
+//
+//            Imgproc.threshold(h,h,LH, 255, Imgproc.THRESH_BINARY);
+//            Imgproc.threshold(s,s,LS, 255, Imgproc.THRESH_BINARY);
+//            Imgproc.threshold(v,v,LV, 255, Imgproc.THRESH_BINARY);
 
-            Imgproc.morphologyEx(mask, open, Imgproc.MORPH_OPEN, kernel);
-            Imgproc.morphologyEx(mask, closed, Imgproc.MORPH_OPEN, kernel);
+            Core.inRange(hsv, LOWER_BOUND_RED, UPPER_BOUND_RED, maskRed);
+            Core.inRange(hsv, LOWER_BOUND_YELLOW, UPPER_BOUND_YELLOW, maskYellow);
+            Core.inRange(hsv, LOWER_BOUND_BLUE, UPPER_BOUND_BLUE, maskBlue);
 
-            Core.add(open, closed, filtered);
+            Imgproc.morphologyEx(maskYellow, openYellow, Imgproc.MORPH_OPEN, kernel);
+            Imgproc.morphologyEx(maskYellow, closedYellow, Imgproc.MORPH_CLOSE, kernel);
+            Imgproc.morphologyEx(maskRed, openRed, Imgproc.MORPH_OPEN, kernel);
+            Imgproc.morphologyEx(maskRed, closedRed, Imgproc.MORPH_CLOSE, kernel);
+            Imgproc.morphologyEx(maskBlue, openBlue, Imgproc.MORPH_OPEN, kernel);
+            Imgproc.morphologyEx(maskBlue, closedBlue, Imgproc.MORPH_CLOSE, kernel);
 
-            Imgproc.findContours(filtered, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
+            Core.add(openYellow, closedYellow, filteredYellow);
+            Core.add(openRed, closedRed, filteredRed);
+            Core.add(openBlue, closedBlue, filteredBlue);
+
+            Core.add(filteredRed, filteredYellow, output);
+            Core.add(output, filteredBlue, output);
+
+            Imgproc.findContours(output, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
 //            Imgproc.drawContours(input, contours, -1, new Scalar(0,255,0), 1);
 
 
@@ -198,28 +228,20 @@ public class AutoAlignPipeline {
             switch (stage){
                 case 0:
 //                    telemetry = "active stage is ycrcb" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
                     return input;
                 case 1:
 //                    telemetry = "active stage is coi" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
-                    Imgproc.circle(mask, new Point(x,y), 2, new Scalar(255,0,0),-1);
-                    return yellow;
+                    Imgproc.circle(maskYellow, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    return output;
                 case 2:
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
-                    Imgproc.circle(yellow, new Point(x,y), 2, new Scalar(255,0,0),-1);
-                    return mask;
+                    Imgproc.circle(hsv, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    return filteredYellow;
                 case 3:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
-                    return open;
+                    return filteredRed;
                 case 4:
-                    return closed;
-                case 5:
-                    return filtered;
-                case 6:
-                    return input;
+                    return filteredBlue;
                 default:
                     return output;
             }
@@ -391,19 +413,38 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
-    public void align(){
-        time.reset();
-        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
-        }
-    }
-
     public void useFrontCam(){
         switchableWebcam.setActiveCamera(frontCam);
         switchableWebcam.setPipeline(sleeveDetector);
+        usingFrontCam = true;
     }
 
     public void useBackCam() {
         switchableWebcam.setActiveCamera(backCam);
         switchableWebcam.setPipeline(poleDetector);
+        usingFrontCam = false;
+    }
+
+    public void aimCam () {
+        double speed = 0;
+
+        if(distance > 10 || distance < -10) {
+            speed = (distance / 120) * rate;
+        }
+        backPoint += speed;
+
+        back.setPosition(backPoint);
+    }
+
+    public double align(double camPos){
+        if(usingFrontCam){
+            front.setPosition(camPos);
+        }else{
+            back.setPosition(camPos);
+        }
+
+        double speed = distance/120;
+
+        return Math.min(1,speed);
     }
 }

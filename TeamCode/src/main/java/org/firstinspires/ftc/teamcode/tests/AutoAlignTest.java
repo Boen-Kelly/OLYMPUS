@@ -33,14 +33,15 @@ public class AutoAlignTest extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
+        pipeline.useBackCam();
+
 
         while (opModeIsActive()){
 
-            if(gamepad1.b){
-                pipeline.useBackCam();
-            }else if(gamepad1.a){
-                pipeline.useFrontCam();
-            }
+            fl.setPower(-pipeline.align(.75));
+            br.setPower(-pipeline.align(.75));
+            bl.setPower(pipeline.align(.75));
+            fr.setPower(pipeline.align(.75));
 
 //            if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.RIGHT)){
 //                bl.setPower(.3);
@@ -58,7 +59,7 @@ public class AutoAlignTest extends LinearOpMode {
 //                br.setPower(0);
 //                fr.setPower(0);
 //            }
-
+//            pipeline.aimCam();
 
             telemetry.addData("Pipeline says", pipeline);
             telemetry.update();
