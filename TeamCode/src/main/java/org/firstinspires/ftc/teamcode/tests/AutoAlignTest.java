@@ -5,7 +5,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 
 @TeleOp
@@ -38,10 +40,10 @@ public class AutoAlignTest extends LinearOpMode {
 
         while (opModeIsActive()){
 
-            fl.setPower(-pipeline.align(.75));
-            br.setPower(-pipeline.align(.75));
-            bl.setPower(pipeline.align(.75));
-            fr.setPower(pipeline.align(.75));
+//            fl.setPower(pipeline.align(.75, .5));
+//            br.setPower(-pipeline.align(.75, .5));
+//            bl.setPower(pipeline.align(.75, .5));
+//            fr.setPower(-pipeline.align(.75, .5));
 
 //            if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.RIGHT)){
 //                bl.setPower(.3);
@@ -62,6 +64,7 @@ public class AutoAlignTest extends LinearOpMode {
 //            pipeline.aimCam();
 
             telemetry.addData("Pipeline says", pipeline);
+            telemetry.addData("focal length", (pipeline.width() * 29)/4);
             telemetry.update();
         }
     }

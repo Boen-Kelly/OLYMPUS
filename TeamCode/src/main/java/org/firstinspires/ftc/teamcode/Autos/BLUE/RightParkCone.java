@@ -76,8 +76,6 @@ public class RightParkCone extends LinearOpMode {
         drive.followTrajectorySequence(traj);
 //        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
 
-        pipeline.align(.75);
-
         drive.update();
 //        heading2 = Math.toDegrees(drive.getPoseEstimate().getHeading());
 

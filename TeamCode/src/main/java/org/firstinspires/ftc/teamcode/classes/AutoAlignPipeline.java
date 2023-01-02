@@ -45,6 +45,7 @@ public class AutoAlignPipeline {
     public static double frontPoint = .84, backPoint = .75;
     double startTime = 0;
     double distance = 0;
+    double maxWidth = 0;
     public static double rate = .0005;
 
     boolean usingFrontCam = true;
@@ -58,6 +59,7 @@ public class AutoAlignPipeline {
     public static Rect redRect = new Rect(105,245,15,15);
     public static Rect blueRect = new Rect(105,245,15,15);
     public static Rect yellowRect = new Rect(105,245,15,15);
+    Rect bigRect = new Rect();
     public static int threshRed = 145, threshBlue = 150, threshYellow = 160;
     SleeveDetector sleeveDetector;
 
@@ -134,14 +136,10 @@ public class AutoAlignPipeline {
         Mat closedBlue = new Mat();
 
         Rect boundingRect = new Rect();
-        Rect bigRect = new Rect();
 
         Point top, bottom;
 
         Mat kernel = new Mat(12,12, CvType.CV_8UC1);
-
-        double maxWidth = 0;
-
 
         double avg1, avg2;
 
@@ -436,7 +434,7 @@ public class AutoAlignPipeline {
         back.setPosition(backPoint);
     }
 
-    public double align(double camPos){
+    public double align(double camPos, double maxPower){
         if(usingFrontCam){
             front.setPosition(camPos);
         }else{
@@ -445,6 +443,22 @@ public class AutoAlignPipeline {
 
         double speed = distance/120;
 
-        return Math.min(1,speed);
+        return Math.min(maxPower,speed);
     }
+
+    public double width(){
+        if(bigRect == null){
+            return 0;
+        }else{
+            return bigRect.width;
+        }
+    }
+
+//    public double coneDistance(){
+//        return
+//    }
+//
+//    public double poleDistance(){
+//
+//    }
 }
