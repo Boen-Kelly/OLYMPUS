@@ -16,6 +16,7 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
+import org.opencv.core.RotatedRect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -23,17 +24,16 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvSwitchableWebcam;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Config
 public class AutoAlignPipeline {
-    WebcamName backCam;
-    WebcamName frontCam;
-    OpenCvSwitchableWebcam switchableWebcam;
+    OpenCvWebcam backCam;
+    OpenCvWebcam frontCam;
 
-    PoleDetector poleDetector;
     String telemetry = "waiting for input";
     public static Rect midBox = new Rect(185,115,25,25);
     public static int threshVal = 128;
@@ -47,9 +47,8 @@ public class AutoAlignPipeline {
     double startTime = 0;
     double distance = 0;
     double maxWidth = 0;
+    double maxWidthRotated = 0;
     public static double rate = .0005;
-
-    boolean usingFrontCam = true;
 
     DcMotor bl, br, fl, fr;
     Servo front, back;
@@ -61,8 +60,11 @@ public class AutoAlignPipeline {
     public static Rect blueRect = new Rect(105,245,15,15);
     public static Rect yellowRect = new Rect(105,245,15,15);
     Rect bigRect = new Rect();
+    RotatedRect bigRotatedRect = new RotatedRect();
     public static int threshRed = 145, threshBlue = 150, threshYellow = 160;
-    SleeveDetector sleeveDetector;
+    public SleeveDetector sleeveDetector;
+    public PoleDetector poleDetector;
+
 
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
@@ -86,32 +88,55 @@ public class AutoAlignPipeline {
         fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        backCam = hardwareMap.get(WebcamName.class, "Webcam 2");
-        frontCam = hardwareMap.get(WebcamName.class, "Webcam 1");
-
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        switchableWebcam = OpenCvCameraFactory.getInstance().createSwitchableWebcam(cameraMonitorViewId, frontCam, backCam);
+        int[] viewportContainerIds = OpenCvCameraFactory.getInstance()
+                .splitLayoutForMultipleViewports(
+                        cameraMonitorViewId, //The container we're splitting
+                        2, //The number of sub-containers to create
+                        OpenCvCameraFactory.ViewportSplitMethod.HORIZONTALLY); //Whether to split the container vertically or horizontally
 
-        poleDetector = new PoleDetector();
-        sleeveDetector = new SleeveDetector();
-        switchableWebcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        backCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 2"),viewportContainerIds[1]);
+        frontCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"),viewportContainerIds[0]);
+
+//        poleDetector = new PoleDetector();
+//        sleeveDetector = new SleeveDetector();
+
+        backCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                switchableWebcam.setPipeline(sleeveDetector);
-                switchableWebcam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+                backCam.setPipeline(sleeveDetector);
+                backCam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
+                telemetry = "backCam opened successfully";
             }
 
             @Override
-            public void onError(int errorCode) {
-
-        }
+            public void onError(int errorCode)
+            {
+                telemetry = "backCam failed to open";
+            }
         });
 
+        frontCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                backCam.setPipeline(sleeveDetector);
+                backCam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
+                telemetry = "frontcam successfully opened";
+            }
 
-            telemetry = "waiting for start";
+            @Override
+            public void onError(int errorCode)
+            {
+                telemetry = "frontCam failed to open";
+            }
+        });
+
+//        telemetry = "waiting for start";
     }
 
     class PoleDetector extends OpenCvPipeline {
@@ -137,6 +162,7 @@ public class AutoAlignPipeline {
         Mat closedBlue = new Mat();
 
         Rect boundingRect = new Rect();
+        RotatedRect rotatedBoundingRect = new RotatedRect();
 
         Point top, bottom;
 
@@ -199,10 +225,8 @@ public class AutoAlignPipeline {
             List<MatOfPoint2f> newContours = new ArrayList<>();
 
             for (MatOfPoint mat : contours) {
-
                 MatOfPoint2f newPoint = new MatOfPoint2f(mat.toArray());
                 newContours.add(newPoint);
-
             }
 
 
@@ -213,6 +237,22 @@ public class AutoAlignPipeline {
                     maxWidth = boundingRect.width;
                     bigRect = boundingRect;
                 }
+            }
+
+            for(MatOfPoint2f box:newContours){
+                rotatedBoundingRect = Imgproc.minAreaRect(box);
+
+                if(rotatedBoundingRect.size.width > maxWidthRotated){
+                    maxWidthRotated = rotatedBoundingRect.size.width;
+                    bigRotatedRect = rotatedBoundingRect;
+                }
+            }
+
+            Point[] vertices = new Point[4];
+
+            bigRotatedRect.points(vertices);
+            for (int j = 0; j < 4; j++){
+                Imgproc.line(input, vertices[j], vertices[(j+1)%4], new Scalar(0,255,0), 2);
             }
 
             if(bigRect != null) {
@@ -232,6 +272,7 @@ public class AutoAlignPipeline {
             telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance;
 
             maxWidth = Double.MIN_VALUE;
+            maxWidthRotated = Double.MIN_VALUE;
 
             switch (stage){
                 case 0:
@@ -421,18 +462,6 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
-    public void useFrontCam(){
-        switchableWebcam.setActiveCamera(frontCam);
-        switchableWebcam.setPipeline(sleeveDetector);
-        usingFrontCam = true;
-    }
-
-    public void useBackCam() {
-        switchableWebcam.setActiveCamera(backCam);
-        switchableWebcam.setPipeline(poleDetector);
-        usingFrontCam = false;
-    }
-
     public void aimCam () {
         double speed = 0;
 
@@ -444,7 +473,7 @@ public class AutoAlignPipeline {
         back.setPosition(backPoint);
     }
 
-    public double align(double camPos, double maxPower){
+    public double align(double camPos, double maxPower, boolean usingFrontCam){
         if(usingFrontCam){
             front.setPosition(camPos);
         }else{
@@ -457,18 +486,40 @@ public class AutoAlignPipeline {
     }
 
     public double width(){
-        if(bigRect == null){
+        if(bigRotatedRect.size == null){
             return 0;
         }else{
-            return bigRect.width;
+            return bigRotatedRect.size.width;
         }
     }
 
-//    public double coneDistance(){
-//        return
-//    }
-//
-//    public double poleDistance(){
-//
-//    }
+    public double height(){
+        if(bigRotatedRect.size == null){
+            return 0;
+        }else{
+            return bigRotatedRect.size.height;
+        }
+    }
+
+    public double angle(){
+        if(bigRotatedRect == null){
+            return 0;
+        }else{
+            return bigRotatedRect.angle;
+        }
+    }
+
+    public void turnToAlign(double camPos, boolean usingFrontCam){
+        fl.setPower(align(camPos, .5, usingFrontCam));
+        br.setPower(-align(camPos, .5, usingFrontCam));
+        bl.setPower(align(camPos, .5, usingFrontCam));
+        fr.setPower(-align(camPos, .5, usingFrontCam));
+    }
+
+    public void strafeToAlign(double camPos, boolean usingFrontCam){
+        fl.setPower(-align(camPos, .5, usingFrontCam));
+        br.setPower(-align(camPos, .5, usingFrontCam));
+        bl.setPower(align(camPos, .5, usingFrontCam));
+        fr.setPower(align(camPos, .5, usingFrontCam));
+    }
 }

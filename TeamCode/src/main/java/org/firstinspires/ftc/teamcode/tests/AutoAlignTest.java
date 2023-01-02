@@ -18,24 +18,23 @@ public class AutoAlignTest extends LinearOpMode {
 
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
-        bl = hardwareMap.get(DcMotor.class, "bl");
-        br = hardwareMap.get(DcMotor.class, "br");
-        fl = hardwareMap.get(DcMotor.class, "fl");
-        fr = hardwareMap.get(DcMotor.class, "fr");
-
-        bl.setDirection(DcMotorSimple.Direction.REVERSE);
-        fl.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        bl = hardwareMap.get(DcMotor.class, "bl");
+//        br = hardwareMap.get(DcMotor.class, "br");
+//        fl = hardwareMap.get(DcMotor.class, "fl");
+//        fr = hardwareMap.get(DcMotor.class, "fr");
+//
+//        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+//        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+//
+//        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         telemetry.addLine("Waiting for start");
         telemetry.update();
 
         waitForStart();
-        pipeline.useBackCam();
 
 
         while (opModeIsActive()){
@@ -63,9 +62,11 @@ public class AutoAlignTest extends LinearOpMode {
 //            }
 //            pipeline.aimCam();
 
-            telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("focal length", (pipeline.width() * 29)/4);
-            telemetry.update();
+//            telemetry.addData("Pipeline says", pipeline);
+//            telemetry.addData("width", pipeline.width());
+//            telemetry.addData("height", pipeline.height());
+//            telemetry.addData("angle", pipeline.angle());
+//            telemetry.update();
         }
     }
 }
