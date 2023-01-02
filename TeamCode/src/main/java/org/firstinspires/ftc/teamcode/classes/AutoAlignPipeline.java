@@ -13,6 +13,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
@@ -194,6 +195,15 @@ public class AutoAlignPipeline {
 
             Imgproc.findContours(output, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
 //            Imgproc.drawContours(input, contours, -1, new Scalar(0,255,0), 1);
+
+            List<MatOfPoint2f> newContours = new ArrayList<>();
+
+            for (MatOfPoint mat : contours) {
+
+                MatOfPoint2f newPoint = new MatOfPoint2f(mat.toArray());
+                newContours.add(newPoint);
+
+            }
 
 
             for(Mat box:contours) {
