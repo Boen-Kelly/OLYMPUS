@@ -263,7 +263,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
-                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.SINELON_PARTY_PALETTE);
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
             }else if(gamepad2.right_trigger > 0 && gamepad2.b){
                 height = 200;
                 fineTune = 0;
@@ -275,7 +275,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
-                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED_ORANGE);
             }else if(gamepad2.right_trigger > 0 && gamepad2.a){
                 height = 500;
                 fineTune = 0;
@@ -287,21 +287,25 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = false;
                 bottom = 500;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(gamepad2.left_trigger > 0 && gamepad2.x){
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 450;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(gamepad2.left_trigger > 0 && gamepad2.b){
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 350;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(gamepad2.left_trigger > 0 && gamepad2.a){
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 250;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(savedTime+0.5 < runtime.seconds() && savedTime != 0){
                 height = 500;
                 fineTune = 0;
