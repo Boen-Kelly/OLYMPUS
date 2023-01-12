@@ -42,17 +42,15 @@ public class RightParkCone extends LinearOpMode {
 
         drive.setPoseEstimate(new Pose2d(-36,64.75, Math.toRadians(-90)));
 
-        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+        Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
                     lift.setSlurpPower(1);
-                    lift.lift(0, false);
                 })
-                .lineTo(new Vector2d(-36, -5))
-                .lineTo(new Vector2d(-36, 12))
-                .turn(Math.toRadians(-135))
-                .addTemporalMarker(3, () -> {
-                    lift.drop();
-                })
+                .lineTo(new Vector2d(-14, 63.75))
+                .splineToConstantHeading(new Vector2d(-12, 61.75), Math.toRadians(-90))
+                .lineTo(new Vector2d(-12, 14))
+                .splineTo(new Vector2d(-14,12), Math.toRadians(180))
+                .lineTo(new Vector2d(-36,12))
                 .build();
 
         while(!isStarted()) {
@@ -73,18 +71,14 @@ public class RightParkCone extends LinearOpMode {
         pipeline.useBackCam();
         liftThread.start();
 
-        drive.followTrajectorySequence(traj);
+        drive.followTrajectory(traj);
 //        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
+
+        drive.turn(Math.toRadians(-45));
 
         pipeline.align();
 
         drive.update();
-//        heading2 = Math.toDegrees(drive.getPoseEstimate().getHeading());
-
-//        telemetry.addData("heading1", heading1);
-//        telemetry.addData("heading2", heading2);
-//        telemetry.update();
-//        sleep(1000);
 
         Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
