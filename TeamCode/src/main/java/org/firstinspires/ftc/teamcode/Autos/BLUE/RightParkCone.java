@@ -14,10 +14,12 @@ import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.LiftArm;
 import org.firstinspires.ftc.teamcode.classes.MLToolChain;
 import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
+import org.openftc.apriltag.AprilTagDetection;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 //-2.91
 //-31.04
@@ -26,6 +28,12 @@ import java.io.IOException;
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
+        int AprilTagID =7;
+
+        //Tag IDs
+        int left = 6;
+        int middle = 7;
+        int right = 8;
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
         double heading1, heading2;
@@ -53,16 +61,16 @@ public class RightParkCone extends LinearOpMode {
                 .lineTo(new Vector2d(-36,12))
                 .build();
 
-        while(!isStarted()) {
+        while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
                 pipeline.useFrontCam();
             }else if(gamepad1.b){
                 pipeline.useBackCam();
             }
 
-            sleevePos = pipeline.getSleevePosition();
+            AprilTagID = pipeline.AprilTagID();
 
-            telemetry.addData("Sleeve position", pipeline.getSleevePosition());
+            telemetry.addData("Sleeve position", AprilTagID);
             telemetry.addLine("waiting for start");
             telemetry.update();
         }
@@ -160,7 +168,7 @@ public class RightParkCone extends LinearOpMode {
 
         drive.followTrajectorySequence(park);
 
-        if(sleevePos.equals(AutoAlignPipeline.DuckPos.ONE)) {
+        if(AprilTagID == left) {
             Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .lineTo(new Vector2d(-14, 32))
                     .build();
@@ -168,8 +176,8 @@ public class RightParkCone extends LinearOpMode {
             drive.followTrajectory(trajL);
 
             drive.turn(Math.toRadians(90));
-        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.TWO)) {
-        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.THREE)) {
+        }else if(AprilTagID == middle) {
+        }else if(AprilTagID == right) {
             Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .lineTo(new Vector2d(-60, 32))
                     .build();

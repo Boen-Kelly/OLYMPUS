@@ -114,6 +114,7 @@ public class FieldCentricDrive extends LinearOpMode {
         boolean toggle2 = true;
         boolean toggle3 = true;
         boolean armUp = false;
+        boolean fullPwrDelivery = false;
 
         boolean isLiftUp = false;
         int robotPresetHeight = 1;
@@ -225,7 +226,7 @@ public class FieldCentricDrive extends LinearOpMode {
             leftBackDrive.setPower(v3 * slowSpeed);
             rightBackDrive.setPower(v4 * slowSpeed);
 
-            if(isLiftUp){
+            if(isLiftUp && fullPwrDelivery == false){
                 slowSpeed = .75 ;
             }else{
                 slowSpeed = 1;
@@ -345,7 +346,11 @@ public class FieldCentricDrive extends LinearOpMode {
 
             if(gamepad1.x){
                 if(toggle){
+                    if(gamepad1.left_trigger > 0.05){
+                        fullPwrDelivery = true;
+                    }
                     isLiftUp = !isLiftUp;
+                    fullPwrDelivery = false;
                     toggle = false;
                 }
             }else{
