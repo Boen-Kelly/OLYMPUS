@@ -4,11 +4,13 @@ package org.firstinspires.ftc.teamcode.classes;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -41,14 +43,17 @@ public class AutoAlignPipeline {
     public static double UH = 120, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
-    public static double boxWidth = 40;
+    public static double boxWidth = 20;
     public static double frontPoint = .84, backPoint = .8;
     double startTime = 0;
+    double distance = 0;
+
 
     polePos pos = polePos.ON_POINT;
 
     DcMotor bl, br, fl, fr;
     Servo front, back;
+    DistanceSensor backDistance;
 
     ElapsedTime time = new ElapsedTime();
 
@@ -69,6 +74,8 @@ public class AutoAlignPipeline {
 
         front = hardwareMap.get(Servo.class, "front");
         back = hardwareMap.get(Servo.class, "back");
+
+        backDistance = hardwareMap.get(DistanceSensor.class, "backDistance");
 
         front.setPosition(frontPoint);
         back.setPosition(backPoint);
@@ -129,7 +136,6 @@ public class AutoAlignPipeline {
         Mat kernel = new Mat(12,12, CvType.CV_8UC1);
 
         double maxWidth = 0;
-        double distance = 0;
 
 
         double avg1, avg2;
@@ -441,5 +447,49 @@ public class AutoAlignPipeline {
     public void useBackCam() {
         switchableWebcam.setActiveCamera(backCam);
         switchableWebcam.setPipeline(poleDetector);
+    }
+
+    public double align(double camPos, double maxPower, boolean usingFrontCam){
+        if(usingFrontCam){
+            front.setPosition(camPos);
+        }else{
+            back.setPosition(camPos);
+        }
+
+        double speed = distance/120;
+
+        double output =  Math.min(maxPower,speed);
+        output = Math.max(-maxPower, output);
+        return output;
+    }
+
+
+    public void turnToAlign(double camPos, boolean usingFrontCam) {
+        time.reset();
+        while (time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
+            fl.setPower(align(camPos, .25, usingFrontCam));
+            br.setPower(-align(camPos, .25, usingFrontCam));
+            bl.setPower(align(camPos, .25, usingFrontCam));
+            fr.setPower(-align(camPos, .25, usingFrontCam));
+
+            if(!pos.equals(polePos.ON_POINT)){
+                startTime = time.milliseconds();
+            }
+        }
+    }
+
+    public void strafeToAlign(double camPos, boolean usingFrontCam){
+        fl.setPower(-align(camPos, .5, usingFrontCam));
+        br.setPower(-align(camPos, .5, usingFrontCam));
+        bl.setPower(align(camPos, .5, usingFrontCam));
+        fr.setPower(align(camPos, .5, usingFrontCam));
+    }
+
+    public double targetDistance(double distance, double maxPower){
+        double speed = (backDistance.getDistance(DistanceUnit.CM) - distance)/30;
+
+        speed = Math.min(maxPower, speed);
+
+        return speed;
     }
 }

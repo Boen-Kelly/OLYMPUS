@@ -46,8 +46,8 @@ public class RightParkCone extends LinearOpMode {
                 .addTemporalMarker(0, () -> {
                     lift.setSlurpPower(1);
                 })
-                .lineTo(new Vector2d(-14, 63.75))
-                .splineToConstantHeading(new Vector2d(-12, 61.75), Math.toRadians(-90))
+                .lineTo(new Vector2d(-14, 61.75))
+                .splineToConstantHeading(new Vector2d(-12, 59.75), Math.toRadians(-90))
                 .lineTo(new Vector2d(-12, 14))
                 .splineTo(new Vector2d(-14,12), Math.toRadians(180))
                 .lineTo(new Vector2d(-36,12))
@@ -76,7 +76,7 @@ public class RightParkCone extends LinearOpMode {
 
         drive.turn(Math.toRadians(-45));
 
-        pipeline.align();
+        pipeline.turnToAlign(.75, false);
 
         drive.update();
 
@@ -84,7 +84,8 @@ public class RightParkCone extends LinearOpMode {
                 .addTemporalMarker(0, () -> {
                     lift.lift(1500,false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getY() - Math.sin(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getHeading()))
+//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getHeading()))
+                .back(11)
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -147,7 +148,8 @@ public class RightParkCone extends LinearOpMode {
                     lift.setSlurpPower(0);
                     lift.lift(0, false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getY() + Math.sin(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getHeading()))
+//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
+                .forward(11)
                 .turn(Math.toRadians(-45))
                 .lineToLinearHeading(new Pose2d(-36, 32, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {

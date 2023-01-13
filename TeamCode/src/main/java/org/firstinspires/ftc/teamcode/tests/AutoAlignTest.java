@@ -33,28 +33,16 @@ public class AutoAlignTest extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
+        pipeline.useBackCam();
+
 
         while (opModeIsActive()){
 
-            if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.RIGHT)){
-                bl.setPower(.3);
-                fl.setPower(.3);
-                br.setPower(-.3);
-                fr.setPower(-.3);
-            }else if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.LEFT)){
-                bl.setPower(-.3);
-                fl.setPower(-.3);
-                br.setPower(.3);
-                fr.setPower(.3);
-            }else{
-                bl.setPower(0);
-                fl.setPower(0);
-                br.setPower(0);
-                fr.setPower(0);
-            }
+            pipeline.turnToAlign(.7,false);
 
 
             telemetry.addData("Pipeline says", pipeline);
+            telemetry.addData("distance speed", pipeline.targetDistance(.7,.5));
             telemetry.update();
         }
     }
