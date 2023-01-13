@@ -84,7 +84,7 @@ public class RightParkCone extends LinearOpMode {
                 .addTemporalMarker(0, () -> {
                     lift.lift(1500,false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*13, drive.getPoseEstimate().getY() - Math.sin(45)*13, drive.getPoseEstimate().getHeading()))
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getY() - Math.sin(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getHeading()))
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -147,7 +147,7 @@ public class RightParkCone extends LinearOpMode {
                     lift.setSlurpPower(0);
                     lift.lift(0, false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*13, drive.getPoseEstimate().getY() + Math.sin(45)*13, drive.getPoseEstimate().getHeading()))
+                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getY() + Math.sin(360 - Math.toDegrees(drive.getPoseEstimate().getHeading()))*13, drive.getPoseEstimate().getHeading()))
                 .turn(Math.toRadians(-45))
                 .lineToLinearHeading(new Pose2d(-36, 32, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {
@@ -169,7 +169,7 @@ public class RightParkCone extends LinearOpMode {
         }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.TWO)) {
         }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.THREE)) {
             Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-60, 38))
+                    .lineTo(new Vector2d(-60, 32))
                     .build();
 
             drive.followTrajectory(trajR);

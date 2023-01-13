@@ -42,7 +42,7 @@ public class AutoAlignPipeline {
 
     public static int x = 10, y = 10;
     public static double boxWidth = 40;
-    public static double frontPoint = .84, backPoint = .75;
+    public static double frontPoint = .84, backPoint = .8;
     double startTime = 0;
 
     polePos pos = polePos.ON_POINT;
