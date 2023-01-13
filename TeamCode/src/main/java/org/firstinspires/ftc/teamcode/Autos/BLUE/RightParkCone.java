@@ -46,8 +46,8 @@ public class RightParkCone extends LinearOpMode {
                 .addTemporalMarker(0, () -> {
                     lift.setSlurpPower(1);
                 })
-                .lineTo(new Vector2d(-14, 61.75))
-                .splineToConstantHeading(new Vector2d(-12, 59.75), Math.toRadians(-90))
+                .splineToConstantHeading(new Vector2d(-14, 59.75), Math.toRadians(-90))
+                .splineToConstantHeading(new Vector2d(-12, 57.75), Math.toRadians(-90))
                 .lineTo(new Vector2d(-12, 14))
                 .splineTo(new Vector2d(-14,12), Math.toRadians(180))
                 .lineTo(new Vector2d(-36,12))
