@@ -48,7 +48,7 @@ public class RightParkCone extends LinearOpMode {
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        drive.setPoseEstimate(new Pose2d(-36,64.75, Math.toRadians(-90)));
+        drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(-90)));
 
         Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
@@ -84,7 +84,7 @@ public class RightParkCone extends LinearOpMode {
 
         drive.turn(Math.toRadians(-45));
 
-        pipeline.turnToAlign(.75, false);
+        pipeline.turnToAlign(.77, false);
 
         drive.update();
 
@@ -93,7 +93,7 @@ public class RightParkCone extends LinearOpMode {
                     lift.lift(1500,false);
                 })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getHeading()))
-                .back(11)
+                .back(12)
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -157,9 +157,8 @@ public class RightParkCone extends LinearOpMode {
                     lift.lift(0, false);
                 })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                .forward(11)
+                .forward(12)
                 .turn(Math.toRadians(-45))
-                .lineToLinearHeading(new Pose2d(-36, 32, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {
                     lift.drop();
                 })
@@ -170,7 +169,7 @@ public class RightParkCone extends LinearOpMode {
 
         if(AprilTagID == left) {
             Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-14, 32))
+                    .lineTo(new Vector2d(-12, 12))
                     .build();
 
             drive.followTrajectory(trajL);
@@ -179,7 +178,7 @@ public class RightParkCone extends LinearOpMode {
         }else if(AprilTagID == middle) {
         }else if(AprilTagID == right) {
             Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-60, 32))
+                    .lineTo(new Vector2d(-60, 12))
                     .build();
 
             drive.followTrajectory(trajR);
