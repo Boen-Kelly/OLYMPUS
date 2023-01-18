@@ -14,10 +14,12 @@ import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.LiftArm;
 import org.firstinspires.ftc.teamcode.classes.MLToolChain;
 import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
+import org.openftc.apriltag.AprilTagDetection;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 //-2.91
 //-31.04
@@ -26,6 +28,12 @@ import java.io.IOException;
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
+        int AprilTagID =7;
+
+        //Tag IDs
+        int left = 6;
+        int middle = 7;
+        int right = 8;
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
         while(!pipeline.toString().equals("waiting for start")){
@@ -38,23 +46,20 @@ public class RightParkCone extends LinearOpMode {
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        drive.setPoseEstimate(new Pose2d(-36,64.75, Math.toRadians(-90)));
+        drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(-90)));
 
-        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+        Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
                     lift.setSlurpPower(1);
-                    lift.lift(0, false);
                 })
-                .lineTo(new Vector2d(-36, -5))
-                .lineTo(new Vector2d(-36, 12))
-                .turn(Math.toRadians(-135))
-                .addTemporalMarker(3, () -> {
-                    pipeline.turnToAlign(.75, false);
-                    lift.drop();
-                })
+                .splineToConstantHeading(new Vector2d(-14, 59.75), Math.toRadians(-90))
+                .splineToConstantHeading(new Vector2d(-12, 57.75), Math.toRadians(-90))
+                .lineTo(new Vector2d(-12, 14))
+                .splineTo(new Vector2d(-14,12), Math.toRadians(180))
+                .lineTo(new Vector2d(-36,12))
                 .build();
 
-        while(!isStarted()) {
+        while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
 //                pipeline.frontCam.setPipeline(pipeline.poleDetector);
 //                pipeline.backCam.setPipeline(pipeline.poleDetector);
@@ -66,9 +71,9 @@ public class RightParkCone extends LinearOpMode {
 //                pipeline.backCam.setPipeline(pipeline.poleDetector);
             }
 
-            sleevePos = pipeline.getSleevePosition();
+            AprilTagID = pipeline.AprilTagID();
 
-            telemetry.addData("Sleeve position", pipeline.getSleevePosition());
+            telemetry.addData("Sleeve position", AprilTagID);
             telemetry.addLine("waiting for start");
             telemetry.update();
         }
@@ -78,7 +83,12 @@ public class RightParkCone extends LinearOpMode {
         waitForStart();
         liftThread.start();
 
-        drive.followTrajectorySequence(traj);
+        drive.followTrajectory(traj);
+//        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
+
+        drive.turn(Math.toRadians(-45));
+
+        pipeline.turnToAlign(.77, false);
 
         drive.update();
 
@@ -86,7 +96,8 @@ public class RightParkCone extends LinearOpMode {
                 .addTemporalMarker(0, () -> {
                     lift.lift(1500,false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(45)*13, drive.getPoseEstimate().getY() - Math.sin(45)*13, drive.getPoseEstimate().getHeading()))
+//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getHeading()))
+                .back(12)
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -151,9 +162,9 @@ public class RightParkCone extends LinearOpMode {
                     lift.setSlurpPower(0);
                     lift.lift(0, false);
                 })
-                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() - Math.cos(45)*13, drive.getPoseEstimate().getY() + Math.sin(45)*13, drive.getPoseEstimate().getHeading()))
+//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
+                .forward(12)
                 .turn(Math.toRadians(-45))
-                .lineToLinearHeading(new Pose2d(-36, 32, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {
                     lift.drop();
                 })
@@ -162,18 +173,18 @@ public class RightParkCone extends LinearOpMode {
 
         drive.followTrajectorySequence(park);
 
-        if(sleevePos.equals(AutoAlignPipeline.DuckPos.ONE)) {
+        if(AprilTagID == left) {
             Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-14, 32))
+                    .lineTo(new Vector2d(-12, 12))
                     .build();
 
             drive.followTrajectory(trajL);
 
             drive.turn(Math.toRadians(90));
-        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.TWO)) {
-        }else if(sleevePos.equals(AutoAlignPipeline.DuckPos.THREE)) {
+        }else if(AprilTagID == middle) {
+        }else if(AprilTagID == right) {
             Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-60, 38))
+                    .lineTo(new Vector2d(-60, 12))
                     .build();
 
             drive.followTrajectory(trajR);

@@ -41,6 +41,7 @@ public class AutoAlignTest extends LinearOpMode {
         waitForStart();
 
 
+
         while (opModeIsActive()){
 
 //            fl.setPower(pipeline.align(.75, .5));
@@ -48,28 +49,15 @@ public class AutoAlignTest extends LinearOpMode {
 //            bl.setPower(pipeline.align(.75, .5));
 //            fr.setPower(-pipeline.align(.75, .5));
 
-//            if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.RIGHT)){
-//                bl.setPower(.3);
-//                fl.setPower(.3);
-//                br.setPower(-.3);
-//                fr.setPower(-.3);
-//            }else if(pipeline.getPolePos().equals(AutoAlignPipeline.polePos.LEFT)){
-//                bl.setPower(-.3);
-//                fl.setPower(-.3);
-//                br.setPower(.3);
-//                fr.setPower(.3);
-//            }else{
-//                bl.setPower(0);
-//                fl.setPower(0);
-//                br.setPower(0);
-//                fr.setPower(0);
-//            }
+            pipeline.turnToAlign(.7,false);
+
 //            pipeline.aimCam();
 
             telemetry.addData("Pipeline says", pipeline);
 //            telemetry.addData("width", pipeline.width());
 //            telemetry.addData("height", pipeline.height());
 //            telemetry.addData("angle", pipeline.angle());
+            telemetry.addData("distance speed", pipeline.targetDistance(.7,.5));
             telemetry.update();
         }
     }

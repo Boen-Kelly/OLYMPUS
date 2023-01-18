@@ -81,6 +81,8 @@ public class FieldCentricDrive extends LinearOpMode {
     private DcMotor rightBackDrive = null;
     private DcMotor rightFrontDrive = null;
 
+    RevBlinkinLedDriver leds;
+
     int bottom = 0;
 
     BNO055IMU imu;
@@ -112,6 +114,7 @@ public class FieldCentricDrive extends LinearOpMode {
         boolean toggle2 = true;
         boolean toggle3 = true;
         boolean armUp = false;
+        boolean fullPwrDelivery = false;
 
         boolean isLiftUp = false;
         int robotPresetHeight = 1;
@@ -149,6 +152,8 @@ public class FieldCentricDrive extends LinearOpMode {
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
+        leds = hardwareMap.get(RevBlinkinLedDriver.class, "led");
+
         leftBackDrive  = hardwareMap.get(DcMotor.class, "bl");
         leftFrontDrive  = hardwareMap.get(DcMotor.class, "fl");
         rightBackDrive = hardwareMap.get(DcMotor.class, "br");
@@ -221,7 +226,7 @@ public class FieldCentricDrive extends LinearOpMode {
             leftBackDrive.setPower(v3 * slowSpeed);
             rightBackDrive.setPower(v4 * slowSpeed);
 
-            if(isLiftUp){
+            if(isLiftUp && fullPwrDelivery == false){
                 slowSpeed = .75 ;
             }else{
                 slowSpeed = 1;
@@ -255,45 +260,53 @@ public class FieldCentricDrive extends LinearOpMode {
             }
 
             if(gamepad2.right_trigger > 0 && gamepad2.y){
-                height = 1500;
+                height = 1700;
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
             }else if(gamepad2.right_trigger > 0 && gamepad2.b){
                 height = 200;
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.YELLOW);
             }else if(gamepad2.right_trigger > 0 && gamepad2.x){
                 height = 950;
                 fineTune = 0;
                 armUp = true;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED_ORANGE);
             }else if(gamepad2.right_trigger > 0 && gamepad2.a){
                 height = 500;
                 fineTune = 0;
                 armUp = false;
                 bottom = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
             }else if(gamepad2.left_trigger > 0 && gamepad2.y){
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 500;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(gamepad2.left_trigger > 0 && gamepad2.x){
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 450;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(gamepad2.left_trigger > 0 && gamepad2.b){
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 350;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(gamepad2.left_trigger > 0 && gamepad2.a){
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 bottom = 250;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             }else if(savedTime+0.5 < runtime.seconds() && savedTime != 0){
                 height = 500;
                 fineTune = 0;
@@ -301,6 +314,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 bottom = 0;
                 Slurper.setPower(-1);
                 savedTime = 0;
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
             }
 
 
@@ -332,7 +346,11 @@ public class FieldCentricDrive extends LinearOpMode {
 
             if(gamepad1.x){
                 if(toggle){
+                    if(gamepad1.left_trigger > 0.05){
+                        fullPwrDelivery = true;
+                    }
                     isLiftUp = !isLiftUp;
+                    fullPwrDelivery = false;
                     toggle = false;
                 }
             }else{
