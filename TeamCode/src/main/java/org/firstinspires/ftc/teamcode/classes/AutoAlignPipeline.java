@@ -62,8 +62,6 @@ public class AutoAlignPipeline {
     Rect bigRect = new Rect();
     RotatedRect bigRotatedRect = new RotatedRect();
     public static int threshRed = 145, threshBlue = 150, threshYellow = 160;
-    public SleeveDetector sleeveDetector;
-    public PoleDetector poleDetector;
 
 
 
@@ -96,8 +94,8 @@ public class AutoAlignPipeline {
                         2, //The number of sub-containers to create
                         OpenCvCameraFactory.ViewportSplitMethod.HORIZONTALLY); //Whether to split the container vertically or horizontally
 
-        backCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 2"),viewportContainerIds[1]);
-        frontCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"),viewportContainerIds[0]);
+        backCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 2"), viewportContainerIds[1]);
+        frontCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), viewportContainerIds[0]);
 
 //        poleDetector = new PoleDetector();
 //        sleeveDetector = new SleeveDetector();
@@ -107,15 +105,16 @@ public class AutoAlignPipeline {
             @Override
             public void onOpened()
             {
-                backCam.setPipeline(sleeveDetector);
-                backCam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
-                telemetry = "backCam opened successfully";
+                backCam.setPipeline(new UselessGreenBoxDrawingPipeline());
+                backCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
             }
 
             @Override
             public void onError(int errorCode)
             {
-                telemetry = "backCam failed to open";
+                /*
+                 * This will be called if the camera could not be opened
+                 */
             }
         });
 
@@ -124,15 +123,16 @@ public class AutoAlignPipeline {
             @Override
             public void onOpened()
             {
-                backCam.setPipeline(sleeveDetector);
-                backCam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
-                telemetry = "frontcam successfully opened";
+                frontCam.setPipeline(new UselessGreenBoxDrawingPipeline());
+                frontCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
             }
 
             @Override
             public void onError(int errorCode)
             {
-                telemetry = "frontCam failed to open";
+                /*
+                 * This will be called if the camera could not be opened
+                 */
             }
         });
 
@@ -443,6 +443,25 @@ public class AutoAlignPipeline {
                     Imgproc.rectangle(thresholdYellow, yellowRect,new Scalar(255,0,0), 2);
                     return thresholdYellow;
             }
+            return input;
+        }
+    }
+
+    class UselessGreenBoxDrawingPipeline extends OpenCvPipeline
+    {
+        @Override
+        public Mat processFrame(Mat input)
+        {
+            Imgproc.rectangle(
+                    input,
+                    new Point(
+                            input.cols()/4,
+                            input.rows()/4),
+                    new Point(
+                            input.cols()*(3f/4f),
+                            input.rows()*(3f/4f)),
+                    new Scalar(0, 255, 0), 4);
+
             return input;
         }
     }
