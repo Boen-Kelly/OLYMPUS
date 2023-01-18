@@ -105,8 +105,8 @@ public class AutoAlignPipeline {
             @Override
             public void onOpened()
             {
-                backCam.setPipeline(new UselessGreenBoxDrawingPipeline());
-                backCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+                backCam.setPipeline(new PoleDetector());
+                backCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
 
             @Override
@@ -123,8 +123,8 @@ public class AutoAlignPipeline {
             @Override
             public void onOpened()
             {
-                frontCam.setPipeline(new UselessGreenBoxDrawingPipeline());
-                frontCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+                frontCam.setPipeline(new SleeveDetector());
+                frontCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
 
             @Override
