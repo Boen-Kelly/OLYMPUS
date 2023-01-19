@@ -4,13 +4,12 @@ package org.firstinspires.ftc.teamcode.classes;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.checkerframework.checker.units.qual.A;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -50,7 +49,6 @@ public class AutoAlignPipeline {
     public static int x = 10, y = 10;
     public static double boxWidth = 20;
     double startTime = 0;
-    double distance = 0;
     double maxWidth = 0;
     double maxWidthRotated = 0;
     public static double rate = .0005;
@@ -59,7 +57,6 @@ public class AutoAlignPipeline {
 
     DcMotor bl, br, fl, fr;
     Servo front, back;
-    DistanceSensor backDistance;
 
     ElapsedTime time = new ElapsedTime();
 
@@ -67,11 +64,10 @@ public class AutoAlignPipeline {
     public static Rect redRect = new Rect(105,245,15,15);
     public static Rect blueRect = new Rect(105,245,15,15);
     public static Rect yellowRect = new Rect(105,245,15,15);
-    Rect bigRect = new Rect();
-    RotatedRect bigRotatedRect = new RotatedRect();
     public static int threshRed = 145, threshBlue = 150, threshYellow = 160;
 
-    AprilTagDetectionPipeline sleeveDetector;
+    public AprilTagDetectionPipeline backSleeveDetector, frontSleeveDetector;
+    public PoleDetector backPoleDetector, frontPoleDetector;
 
     double fx = 578.272;
     double fy = 578.272;
@@ -92,7 +88,6 @@ public class AutoAlignPipeline {
         front = hardwareMap.get(Servo.class, "front");
         back = hardwareMap.get(Servo.class, "back");
 
-        backDistance = hardwareMap.get(DistanceSensor.class, "backDistance");
 
         front.setPosition(frontPoint);
         back.setPosition(backPoint);
@@ -116,14 +111,17 @@ public class AutoAlignPipeline {
         backCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 2"), viewportContainerIds[1]);
         frontCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), viewportContainerIds[0]);
 
-        sleeveDetector = new AprilTagDetectionPipeline(tagsize,fx,fy,cx,cy);
+        backSleeveDetector = new AprilTagDetectionPipeline(tagsize,fx,fy,cx,cy);
+        frontSleeveDetector = new AprilTagDetectionPipeline(tagsize,fx,fy,cx,cy);
+        backPoleDetector = new PoleDetector();
+        frontPoleDetector = new PoleDetector();
 
         backCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                backCam.setPipeline(new PoleDetector());
+                backCam.setPipeline(backPoleDetector);
                 backCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
 
@@ -141,7 +139,7 @@ public class AutoAlignPipeline {
             @Override
             public void onOpened()
             {
-                frontCam.setPipeline(sleeveDetector);
+                frontCam.setPipeline(frontSleeveDetector);
                 frontCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
 
@@ -154,10 +152,12 @@ public class AutoAlignPipeline {
             }
         });
 
-//        telemetry = "waiting for start";
+        telemetry = "waiting for start";
     }
 
-    class PoleDetector extends OpenCvPipeline {
+    public class PoleDetector extends OpenCvPipeline {
+        Rect bigRect = new Rect();
+        RotatedRect bigRotatedRect = new RotatedRect();
 
         int stage = 0;
         Mat hsv = new Mat();
@@ -187,6 +187,10 @@ public class AutoAlignPipeline {
         Mat kernel = new Mat(12,12, CvType.CV_8UC1);
         double maxWidth = 0;
         double avg1, avg2;
+        double distance = 0;
+
+        boolean yellow = true, red = true, blue = true;
+
 
         @Override
         public void onViewportTapped() {
@@ -223,19 +227,38 @@ public class AutoAlignPipeline {
             Core.inRange(hsv, LOWER_BOUND_YELLOW, UPPER_BOUND_YELLOW, maskYellow);
             Core.inRange(hsv, LOWER_BOUND_BLUE, UPPER_BOUND_BLUE, maskBlue);
 
-            Imgproc.morphologyEx(maskYellow, openYellow, Imgproc.MORPH_OPEN, kernel);
-            Imgproc.morphologyEx(maskYellow, closedYellow, Imgproc.MORPH_CLOSE, kernel);
-            Imgproc.morphologyEx(maskRed, openRed, Imgproc.MORPH_OPEN, kernel);
-            Imgproc.morphologyEx(maskRed, closedRed, Imgproc.MORPH_CLOSE, kernel);
-            Imgproc.morphologyEx(maskBlue, openBlue, Imgproc.MORPH_OPEN, kernel);
-            Imgproc.morphologyEx(maskBlue, closedBlue, Imgproc.MORPH_CLOSE, kernel);
+            Imgproc.morphologyEx(maskYellow, openYellow, Imgproc.MORPH_OPEN, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskYellow, closedYellow, Imgproc.MORPH_CLOSE, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskRed, openRed, Imgproc.MORPH_OPEN, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskRed, closedRed, Imgproc.MORPH_CLOSE, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskBlue, openBlue, Imgproc.MORPH_OPEN, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskBlue, closedBlue, Imgproc.MORPH_CLOSE, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
 
             Core.add(openYellow, closedYellow, filteredYellow);
             Core.add(openRed, closedRed, filteredRed);
             Core.add(openBlue, closedBlue, filteredBlue);
 
-            Core.add(filteredRed, filteredYellow, output);
-            Core.add(output, filteredBlue, output);
+            if(yellow){
+                if(output == null || output.size() != filteredYellow.size()){
+                    output = filteredYellow;
+                }else{
+                    Core.add(filteredYellow, output, output);
+                }
+            }
+            if(red) {
+                if(output == null || output.size() != filteredRed.size()){
+                    output = filteredRed;
+                }else{
+                    Core.add(filteredRed, output, output);
+                }
+            }
+            if(blue){
+                if(output == null || output.size() != filteredBlue.size()){
+                    output = filteredBlue;
+                }else{
+                    Core.add(filteredBlue, output, output);
+                }
+            }
 
             Imgproc.findContours(output, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
 //            Imgproc.drawContours(input, contours, -1, new Scalar(0,255,0), 1);
@@ -312,6 +335,40 @@ public class AutoAlignPipeline {
                 default:
                     return output;
             }
+        }
+
+        public double width(){
+            if(bigRotatedRect.size == null){
+                return 0;
+            }else{
+                return bigRotatedRect.size.width;
+            }
+        }
+
+        public double height(){
+            if(bigRotatedRect.size == null){
+                return 0;
+            }else{
+                return bigRotatedRect.size.height;
+            }
+        }
+
+        public double angle(){
+            if(bigRotatedRect == null){
+                return 0;
+            }else{
+                return bigRotatedRect.angle;
+            }
+        }
+
+        public double getDistance(){
+            return distance;
+        }
+
+        public void setColors(boolean yellow, boolean red, boolean blue){
+            this.yellow = yellow;
+            this.red = red;
+            this.blue = blue;
         }
     }
 
@@ -753,49 +810,34 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
-    public void aimCam () {
+    public void aimCam (boolean isFrontCam) {
         double speed = 0;
 
-        if(distance > 10 || distance < -10) {
-            speed = (distance / 120) * rate;
+        if(isFrontCam) {
+            if (frontPoleDetector.getDistance() > 10 || frontPoleDetector.getDistance() < -10){
+                speed = (frontPoleDetector.getDistance() / 120) * rate;
+            }
+        }else{
+            if (backPoleDetector.getDistance() > 10 || backPoleDetector.getDistance() < -10){
+                speed = (backPoleDetector.getDistance() / 120) * rate;
+            }
         }
+
         backPoint += speed;
 
         back.setPosition(backPoint);
     }
 
-    public double width(){
-        if(bigRotatedRect.size == null){
-            return 0;
-        }else{
-            return bigRotatedRect.size.width;
-        }
-    }
-
-    public double height(){
-        if(bigRotatedRect.size == null){
-            return 0;
-        }else{
-            return bigRotatedRect.size.height;
-        }
-    }
-
-    public double angle(){
-        if(bigRotatedRect == null){
-            return 0;
-        }else{
-            return bigRotatedRect.angle;
-        }
-    }
-
     public double align(double camPos, double maxPower, boolean usingFrontCam){
+        double speed;
         if(usingFrontCam){
             front.setPosition(camPos);
+            speed = frontPoleDetector.getDistance()/120;
         }else{
             back.setPosition(camPos);
+            speed = backPoleDetector.getDistance()/120;
         }
 
-        double speed = distance/120;
 
         double output = Math.min(maxPower,speed);
         output = Math.max(-maxPower, output);
@@ -811,29 +853,42 @@ public class AutoAlignPipeline {
             bl.setPower(align(camPos, .1, usingFrontCam));
             fr.setPower(-align(camPos, .1 , usingFrontCam));
 
-            if(!aligned()){
+            if(!aligned(usingFrontCam)){
                 startTime = time.milliseconds();
             }
         }
     }
 
     public void strafeToAlign(double camPos, boolean usingFrontCam){
-        fl.setPower(-align(camPos, .5, usingFrontCam));
-        br.setPower(-align(camPos, .5, usingFrontCam));
-        bl.setPower(align(camPos, .5, usingFrontCam));
-        fr.setPower(align(camPos, .5, usingFrontCam));
+        time.reset();
+        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
+            fl.setPower(align(camPos, .5, usingFrontCam));
+            br.setPower(align(camPos, .5, usingFrontCam));
+            bl.setPower(-align(camPos, .5, usingFrontCam));
+            fr.setPower(-align(camPos, .5, usingFrontCam));
+
+            if(!aligned(usingFrontCam)){
+                startTime = time.milliseconds();
+            }
+        }
     }
 
-    public double targetDistance(double distance, double maxPower) {
-        double speed = (backDistance.getDistance(DistanceUnit.CM) - distance) / 30;
+//    public double targetDistance(double distance, double maxPower) {
+//        double speed = (backDistance.getDistance(DistanceUnit.CM) - distance) / 30;
+//
+//        speed = Math.min(maxPower, speed);
+//
+//        return speed;
+//    }
 
-        speed = Math.min(maxPower, speed);
+    public int AprilTagID(boolean isUsingFrontCam){
+        ArrayList<AprilTagDetection> detections = new ArrayList<AprilTagDetection>();
+        if(isUsingFrontCam) {
+            detections = frontSleeveDetector.getLatestDetections();
+        }else{
+            detections = backSleeveDetector.getLatestDetections();
+        }
 
-        return speed;
-    }
-
-    public int AprilTagID(){
-        ArrayList<AprilTagDetection> detections = sleeveDetector.getLatestDetections();
         if(detections.size() != 0) {
             return detections.get(0).id;
         }else{
@@ -841,7 +896,25 @@ public class AutoAlignPipeline {
         }
     }
 
-    public boolean aligned(){
-        return -boxWidth/2 < distance && distance < boxWidth/2;
+    public boolean aligned(boolean isUsingFrontCam){
+        if(isUsingFrontCam) {
+            return -boxWidth / 2 < frontPoleDetector.getDistance() && frontPoleDetector.getDistance() < boxWidth / 2;
+        }else{
+            return -boxWidth / 2 < backPoleDetector.getDistance() && backPoleDetector.getDistance() < boxWidth / 2;
+        }
+    }
+
+    public void setPipelines(String front, String back){
+        if(front.equals("pole")){
+            frontCam.setPipeline(frontPoleDetector);
+        }else{
+            frontCam.setPipeline(frontSleeveDetector);
+        }
+
+        if(back.equals("pole")){
+            backCam.setPipeline(backPoleDetector);
+        }else{
+            backCam.setPipeline(backSleeveDetector);
+        }
     }
 }
