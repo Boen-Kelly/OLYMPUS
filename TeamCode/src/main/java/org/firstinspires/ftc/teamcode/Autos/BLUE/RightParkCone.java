@@ -77,7 +77,8 @@ public class RightParkCone extends LinearOpMode {
                         SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                 .splineTo(new Vector2d(-14,12), Math.toRadians(180))
-                .lineTo(new Vector2d(-36,12))
+                .lineToLinearHeading(new Pose2d(-24,12, Math.toRadians(-180)))
+                .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(-220)))
                 .build();
 
 
@@ -104,15 +105,19 @@ public class RightParkCone extends LinearOpMode {
         drive.followTrajectory(traj);
 //        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
 
-        drive.turn(Math.toRadians(-45));
+//        drive.turn(Math.toRadians(-40));
 
-        pipeline.turnToAlign(.75, false);
+        pipeline.turnToAlign(.77, false);
 
-        sleep(500);
         distanceToPole = backDist.getDistance(DistanceUnit.INCH);
-        telemetry.addData("Distance to pole", distanceToPole);
-        telemetry.update();
-        sleep(1000);
+
+        if(distanceToPole > 40){
+            distanceToPole = 14;
+        }
+
+//        telemetry.addData("Distance to pole", distanceToPole);
+//        telemetry.update();
+//        sleep(1000);
         drive.update();
 
         Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
@@ -126,7 +131,7 @@ public class RightParkCone extends LinearOpMode {
         drive.followTrajectory(firstDeliver);
 
         lift.setSlurpPower(-1);
-        sleep(500);
+//        sleep(500);
 
         for(int i = 0; i < 1; i++){
 //            TrajectorySequence pickup = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
@@ -155,14 +160,18 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectory(pickupcone);
 
-            pipeline.turnToAlign(.84, true);
+            pipeline.turnToAlign(.83, true);
 
-            sleep(500);
+//            sleep(500);
             distanceToCone = frontDist.getDistance(DistanceUnit.INCH);
 
-            telemetry.addData("dist", distanceToCone);
-            telemetry.update();
-            sleep(1000);
+            if(distanceToCone > 40){
+                distanceToCone = 14;
+            }
+
+//            telemetry.addData("dist", distanceToCone);
+//            telemetry.update();
+//            sleep(1000);
             drive.update();
 
             Trajectory collect = drive.trajectoryBuilder(drive.getPoseEstimate())
@@ -170,20 +179,21 @@ public class RightParkCone extends LinearOpMode {
                         lift.lift(1000, true);
                         lift.setSlurpPower(1);
                     })
-                    .forward(distanceToCone-8)
+                    .forward(distanceToCone-7)
                     .build();
 
             drive.followTrajectory(collect);
 
             lift.drop(400);
-            sleep(1000);
+            sleep(750);
             lift.lift();
 
             Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .addTemporalMarker(1, () -> {
-                        lift.drop(0);
+                    .addTemporalMarker(.5, () -> {
+                        lift.drop(400);
                     })
-                    .splineToConstantHeading(new Vector2d(-36,12), Math.toRadians(180))
+                    .lineToLinearHeading(new Pose2d(-48,12, Math.toRadians(180)))
+                    .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(45)))
                     .build();
 
 //            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
@@ -196,15 +206,15 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectory(deliver);
 
-            drive.turn(Math.toRadians(-45));
 
             telemetry.addLine("aligning");
             telemetry.update();
 
-            pipeline.turnToAlign(.75, false);
-            sleep(500);
+            pipeline.turnToAlign(.77, false);
+//            sleep(500);
             distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
+            drive.update();
 
             Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(0, () -> {
@@ -218,37 +228,42 @@ public class RightParkCone extends LinearOpMode {
             lift.setSlurpPower(-1);
         }
 
-        TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .addTemporalMarker(1, () -> {
-                    lift.setSlurpPower(0);
-                    lift.lift(0, false);
-                })
-//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                .forward(distanceToPole-4)
-                .turn(Math.toRadians(-45))
-                .addTemporalMarker(2, () -> {
-                    lift.drop();
-                })
-                .turn(Math.toRadians(-90))
-                .build();
-
-        drive.followTrajectorySequence(park);
-
         if(AprilTagID == left) {
-            Trajectory trajL = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-12, 12))
+            Trajectory parkL = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .addTemporalMarker(1, () -> {
+                        lift.setSlurpPower(0);
+                        lift.drop();
+                    })
+//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
+                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
+                    .lineTo(new Vector2d(-24,12))
+                    .lineToSplineHeading(new Pose2d(-12,12, Math.toRadians(90)))
                     .build();
 
-            drive.followTrajectory(trajL);
-
-            drive.turn(Math.toRadians(90));
+            drive.followTrajectory(parkL);
         }else if(AprilTagID == middle) {
-        }else if(AprilTagID == right) {
-            Trajectory trajR = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineTo(new Vector2d(-60, 12))
+            Trajectory park = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .addTemporalMarker(1, () -> {
+                        lift.setSlurpPower(0);
+                        lift.drop();
+                    })
+//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
+                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
                     .build();
 
-            drive.followTrajectory(trajR);
+            drive.followTrajectory(park);
+        }else if(AprilTagID == right) {
+            Trajectory park = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .addTemporalMarker(1, () -> {
+                        lift.setSlurpPower(0);
+                        lift.drop();
+                    })
+//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
+                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(0)))
+                    .lineTo(new Vector2d(-60,12))
+                    .build();
+
+            drive.followTrajectory(park);
         }
 
         double time = timer.time(TimeUnit.SECONDS);
