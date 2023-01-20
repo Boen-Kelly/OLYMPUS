@@ -122,7 +122,7 @@ public class RightParkCone extends LinearOpMode {
 
         Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
-                    lift.lift(1500,false);
+                    lift.lift(1400,false);
                 })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getHeading()))
                 .back(distanceToPole - 3)
@@ -184,18 +184,16 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectory(collect);
 
-            lift.drop(400);
-            sleep(750);
+            lift.drop(350);
+            sleep(1000);
             lift.lift();
 
             Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
                         lift.drop(400);
                     })
-                    .lineToLinearHeading(new Pose2d(-48,12, Math.toRadians(180)))
-                    .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(45)))
+                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(135)))
                     .build();
-
 //            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
 //                    .addTemporalMarker(.5, () -> {
 //                        lift.drop();
@@ -214,13 +212,17 @@ public class RightParkCone extends LinearOpMode {
 //            sleep(500);
             distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
+            if(distanceToPole > 40){
+                distanceToPole = 14;
+            }
+
             drive.update();
 
             Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(0, () -> {
                         lift.lift(1500, false);
                     })
-                    .back(distanceToPole-4)
+                    .back(distanceToPole-3)
                     .build();
 
             drive.followTrajectory(backup);
@@ -235,9 +237,11 @@ public class RightParkCone extends LinearOpMode {
                         lift.drop();
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
-                    .lineTo(new Vector2d(-24,12))
-                    .lineToSplineHeading(new Pose2d(-12,12, Math.toRadians(90)))
+                    .splineTo(new Vector2d(-32,8), Math.toRadians(180))
+                    .splineToConstantHeading(new Vector2d(-34, 10), Math.toRadians(180))
+                    .splineToConstantHeading(new Vector2d(-32, 12), Math.toRadians(180))
+                    .splineToConstantHeading(new Vector2d(-12,12), Math.toRadians(180))
+                    .splineTo(new Vector2d(-10,14), Math.toRadians(90))
                     .build();
 
             drive.followTrajectory(parkL);
@@ -259,7 +263,8 @@ public class RightParkCone extends LinearOpMode {
                         lift.drop();
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(0)))
+                    .lineToLinearHeading(new Pose2d(-34,10, Math.toRadians(0)))
+                    .splineToConstantHeading(new Vector2d(-48, 12), Math.toRadians(0))
                     .lineTo(new Vector2d(-60,12))
                     .build();
 
