@@ -237,11 +237,10 @@ public class RightParkCone extends LinearOpMode {
                         lift.drop();
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                    .splineTo(new Vector2d(-32,8), Math.toRadians(180))
-                    .splineToConstantHeading(new Vector2d(-34, 10), Math.toRadians(180))
-                    .splineToConstantHeading(new Vector2d(-32, 12), Math.toRadians(180))
-                    .splineToConstantHeading(new Vector2d(-12,12), Math.toRadians(180))
-                    .splineTo(new Vector2d(-10,14), Math.toRadians(90))
+                    .splineTo(new Vector2d(-36, 12), Math.toRadians(0))
+                    .splineToConstantHeading(new Vector2d(-24, 12), Math.toRadians(0))
+                    .splineToConstantHeading(new Vector2d(-14, 10), Math.toRadians(0))
+                    .splineTo(new Vector2d(-12,12),Math.toRadians(90))
                     .build();
 
             drive.followTrajectory(parkL);
