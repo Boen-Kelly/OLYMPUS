@@ -166,12 +166,11 @@ public class RightParkCone extends LinearOpMode {
             distanceToCone = frontDist.getDistance(DistanceUnit.INCH);
 
             if(distanceToCone > 40){
-                distanceToCone = 14;
+                distanceToCone = 26;
             }
 
-//            telemetry.addData("dist", distanceToCone);
-//            telemetry.update();
-//            sleep(1000);
+            telemetry.addData("dist", distanceToCone);
+            telemetry.update();
             drive.update();
 
             Trajectory collect = drive.trajectoryBuilder(drive.getPoseEstimate())
@@ -190,7 +189,7 @@ public class RightParkCone extends LinearOpMode {
 
             Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
-                        lift.drop(400);
+                        lift.drop(500);
                     })
                     .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(135)))
                     .build();
@@ -239,8 +238,8 @@ public class RightParkCone extends LinearOpMode {
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
                     .splineTo(new Vector2d(-36, 12), Math.toRadians(0))
                     .splineToConstantHeading(new Vector2d(-24, 12), Math.toRadians(0))
-                    .splineToConstantHeading(new Vector2d(-14, 10), Math.toRadians(0))
-                    .splineTo(new Vector2d(-12,12),Math.toRadians(90))
+                    .splineToConstantHeading(new Vector2d(-12, 10), Math.toRadians(0))
+                    .splineTo(new Vector2d(-10,12),Math.toRadians(90))
                     .build();
 
             drive.followTrajectory(parkL);
