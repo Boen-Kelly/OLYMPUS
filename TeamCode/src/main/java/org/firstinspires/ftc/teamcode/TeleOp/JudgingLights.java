@@ -238,6 +238,7 @@ public class JudgingLights extends LinearOpMode {
                 Lift2.setMode(Lift1.getMode());
                 Lift1.setPower(1);
                 Lift2.setPower(Lift1.getPower());
+                arm.setPower(1);
             }
             if (gamepad1.b){
                 leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.HOT_PINK);
