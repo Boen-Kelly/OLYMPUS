@@ -8,44 +8,52 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.checkerframework.checker.units.qual.A;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point;
+import org.opencv.core.Point3;
 import org.opencv.core.Rect;
+import org.opencv.core.RotatedRect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+import org.openftc.apriltag.AprilTagDetection;
+import org.openftc.apriltag.AprilTagDetectorJNI;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
-import org.openftc.easyopencv.OpenCvSwitchableWebcam;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Config
 public class AutoAlignPipeline {
-    WebcamName backCam;
-    WebcamName frontCam;
-    OpenCvSwitchableWebcam switchableWebcam;
+    OpenCvWebcam backCam;
+    OpenCvWebcam frontCam;
 
-    PoleDetector poleDetector;
     String telemetry = "waiting for input";
-    public static Rect midBox = new Rect(185,115,25,25);
     public static int threshVal = 128;
 
     public static double LH = 90, LS = 170, LV = 160;
     public static double UH = 120, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
-    public static double boxWidth = 40;
-    public static double frontPoint = .84, backPoint = .75;
+    public static double boxWidth = 20;
     double startTime = 0;
+    double maxWidth = 0;
+    double maxWidthRotated = 0;
+    public static double rate = .0005;
+    public static double frontPoint = .84, backPoint = .8;
 
-    polePos pos = polePos.ON_POINT;
 
     DcMotor bl, br, fl, fr;
     Servo front, back;
@@ -57,7 +65,17 @@ public class AutoAlignPipeline {
     public static Rect blueRect = new Rect(105,245,15,15);
     public static Rect yellowRect = new Rect(105,245,15,15);
     public static int threshRed = 145, threshBlue = 150, threshYellow = 160;
-    SleeveDetector sleeveDetector;
+
+    public AprilTagDetectionPipeline backSleeveDetector, frontSleeveDetector;
+    public PoleDetector backPoleDetector, frontPoleDetector;
+
+    double fx = 578.272;
+    double fy = 578.272;
+    double cx = 402.145;
+    double cy = 221.506;
+
+    // UNITS ARE METERS
+    double tagsize = 0.166;
 
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
@@ -70,6 +88,7 @@ public class AutoAlignPipeline {
         front = hardwareMap.get(Servo.class, "front");
         back = hardwareMap.get(Servo.class, "back");
 
+
         front.setPosition(frontPoint);
         back.setPosition(backPoint);
 
@@ -81,64 +100,103 @@ public class AutoAlignPipeline {
         fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        backCam = hardwareMap.get(WebcamName.class, "Webcam 2");
-        frontCam = hardwareMap.get(WebcamName.class, "Webcam 1");
-
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        switchableWebcam = OpenCvCameraFactory.getInstance().createSwitchableWebcam(cameraMonitorViewId, frontCam, backCam);
+        int[] viewportContainerIds = OpenCvCameraFactory.getInstance()
+                .splitLayoutForMultipleViewports(
+                        cameraMonitorViewId, //The container we're splitting
+                        2, //The number of sub-containers to create
+                        OpenCvCameraFactory.ViewportSplitMethod.HORIZONTALLY); //Whether to split the container vertically or horizontally
 
-        poleDetector = new PoleDetector();
-        sleeveDetector = new SleeveDetector();
-        switchableWebcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        backCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 2"), viewportContainerIds[1]);
+        frontCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), viewportContainerIds[0]);
+
+        backSleeveDetector = new AprilTagDetectionPipeline(tagsize,fx,fy,cx,cy);
+        frontSleeveDetector = new AprilTagDetectionPipeline(tagsize,fx,fy,cx,cy);
+        backPoleDetector = new PoleDetector();
+        frontPoleDetector = new PoleDetector();
+
+        backCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                switchableWebcam.setPipeline(sleeveDetector);
-                switchableWebcam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+                backCam.setPipeline(backPoleDetector);
+                backCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
 
             @Override
-            public void onError(int errorCode) {
-
-        }
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
         });
 
+        frontCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                frontCam.setPipeline(frontSleeveDetector);
+                frontCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+            }
 
-            telemetry = "waiting for start";
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
+
+        telemetry = "waiting for start";
     }
 
-    class PoleDetector extends OpenCvPipeline {
+    public class PoleDetector extends OpenCvPipeline {
+        Rect bigRect = new Rect();
+        RotatedRect bigRotatedRect = new RotatedRect();
 
         int stage = 0;
-        Mat yellow = new Mat();
-        Mat red = new Mat();
-        Mat blue = new Mat();
+        Mat hsv = new Mat();
+        Mat h = new Mat();
+        Mat s = new Mat();
+        Mat v = new Mat();
         Mat hierarchy = new Mat();
-        Mat mask = new Mat();
-        Mat filtered = new Mat();
+        Mat maskYellow = new Mat();
+        Mat maskRed = new Mat();
+        Mat maskBlue = new Mat();
+        Mat filteredYellow = new Mat();
+        Mat filteredRed = new Mat();
+        Mat filteredBlue = new Mat();
         Mat output = new Mat();
-        Mat open = new Mat();
-        Mat closed = new Mat();
+        Mat openYellow = new Mat();
+        Mat closedYellow = new Mat();
+        Mat openRed = new Mat();
+        Mat closedRed = new Mat();
+        Mat openBlue = new Mat();
+        Mat closedBlue = new Mat();
 
         Rect boundingRect = new Rect();
+        RotatedRect rotatedBoundingRect = new RotatedRect();
 
         Point top, bottom;
 
         Mat kernel = new Mat(12,12, CvType.CV_8UC1);
-
         double maxWidth = 0;
+        double avg1, avg2;
         double distance = 0;
 
+        boolean yellow = true, red = true, blue = true;
 
-        double avg1, avg2;
 
         @Override
         public void onViewportTapped() {
             stage ++;
 
-            if(stage > 6){
+            if(stage > 4){
                 stage = 0;
             }
         }
@@ -147,25 +205,70 @@ public class AutoAlignPipeline {
         public Mat processFrame(Mat input){
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 
-            final Scalar LOWER_BOUND_YELLOW = new Scalar(90,170,160);
-            final Scalar UPPER_BOUND_YELLOW = new Scalar(120,255,255);
+            final Scalar LOWER_BOUND_YELLOW = new Scalar(LH,LS,LV);
+            final Scalar UPPER_BOUND_YELLOW = new Scalar(UH,US,UV);
+            final Scalar LOWER_BOUND_RED = new Scalar(110,120,150);//110, 120, 150,
+            final Scalar UPPER_BOUND_RED = new Scalar(150,255,255);
+            Scalar LOWER_BOUND_BLUE = new Scalar(0,100,140);
+            Scalar UPPER_BOUND_BLUE = new Scalar(30,255,255);
 
-            Imgproc.cvtColor(input, yellow, Imgproc.COLOR_BGR2HSV);
 
-//            Core.extractChannel(hsv, h, 0); //90-100
-//            Core.extractChannel(hsv, s, 1); //170-255
-//            Core.extractChannel(hsv, v, 2); //230-200
-//            Core.inRange(v, LOWER_BOUND, UPPER_BOUND, v);
+            Imgproc.cvtColor(input, hsv, Imgproc.COLOR_BGR2HSV);
 
-            Core.inRange(yellow, LOWER_BOUND_YELLOW, UPPER_BOUND_YELLOW, mask);
+//            Core.extractChannel(hsv, h, 0);
+//            Core.extractChannel(hsv, s, 1);
+//            Core.extractChannel(hsv, v, 2);
+//
+//            Imgproc.threshold(h,h,LH, 255, Imgproc.THRESH_BINARY);
+//            Imgproc.threshold(s,s,LS, 255, Imgproc.THRESH_BINARY);
+//            Imgproc.threshold(v,v,LV, 255, Imgproc.THRESH_BINARY);
 
-            Imgproc.morphologyEx(mask, open, Imgproc.MORPH_OPEN, kernel);
-            Imgproc.morphologyEx(mask, closed, Imgproc.MORPH_OPEN, kernel);
+            Core.inRange(hsv, LOWER_BOUND_RED, UPPER_BOUND_RED, maskRed);
+            Core.inRange(hsv, LOWER_BOUND_YELLOW, UPPER_BOUND_YELLOW, maskYellow);
+            Core.inRange(hsv, LOWER_BOUND_BLUE, UPPER_BOUND_BLUE, maskBlue);
 
-            Core.add(open, closed, filtered);
+            Imgproc.morphologyEx(maskYellow, openYellow, Imgproc.MORPH_OPEN, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskYellow, closedYellow, Imgproc.MORPH_CLOSE, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskRed, openRed, Imgproc.MORPH_OPEN, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskRed, closedRed, Imgproc.MORPH_CLOSE, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskBlue, openBlue, Imgproc.MORPH_OPEN, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
+            Imgproc.morphologyEx(maskBlue, closedBlue, Imgproc.MORPH_CLOSE, kernel, new Point(-1,-1), 1, Core.BORDER_REFLECT);
 
-            Imgproc.findContours(filtered, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
+            Core.add(openYellow, closedYellow, filteredYellow);
+            Core.add(openRed, closedRed, filteredRed);
+            Core.add(openBlue, closedBlue, filteredBlue);
+
+            if(yellow){
+                if(output == null || output.size() != filteredYellow.size()){
+                    output = filteredYellow;
+                }else{
+                    Core.add(filteredYellow, output, output);
+                }
+            }
+            if(red) {
+                if(output == null || output.size() != filteredRed.size()){
+                    output = filteredRed;
+                }else{
+                    Core.add(filteredRed, output, output);
+                }
+            }
+            if(blue){
+                if(output == null || output.size() != filteredBlue.size()){
+                    output = filteredBlue;
+                }else{
+                    Core.add(filteredBlue, output, output);
+                }
+            }
+
+            Imgproc.findContours(output, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_NONE);
 //            Imgproc.drawContours(input, contours, -1, new Scalar(0,255,0), 1);
+
+            List<MatOfPoint2f> newContours = new ArrayList<>();
+
+            for (MatOfPoint mat : contours) {
+                MatOfPoint2f newPoint = new MatOfPoint2f(mat.toArray());
+                newContours.add(newPoint);
+            }
 
 
             for(Mat box:contours) {
@@ -173,14 +276,31 @@ public class AutoAlignPipeline {
 
                 if(boundingRect.width > maxWidth){
                     maxWidth = boundingRect.width;
-
-                    Imgproc.rectangle(input, boundingRect, new Scalar(255, 0, 0), 2);
-
-                    top = new Point(boundingRect.x + boundingRect.width * .5, boundingRect.y);
-                    bottom = new Point(boundingRect.x + boundingRect.width * .5, boundingRect.y + boundingRect.height);
-
-                    Imgproc.line(input, top, bottom, new Scalar(255, 0, 0));
+                    bigRect = boundingRect;
                 }
+            }
+
+            for(MatOfPoint2f box:newContours){
+                rotatedBoundingRect = Imgproc.minAreaRect(box);
+
+                if(rotatedBoundingRect.size.width > maxWidthRotated){
+                    maxWidthRotated = rotatedBoundingRect.size.width;
+                    bigRotatedRect = rotatedBoundingRect;
+                }
+            }
+
+            Point[] vertices = new Point[4];
+
+            bigRotatedRect.points(vertices);
+            for (int j = 0; j < 4; j++){
+                Imgproc.line(input, vertices[j], vertices[(j+1)%4], new Scalar(0,255,0), 2);
+            }
+
+            if(bigRect != null) {
+                Imgproc.rectangle(input, bigRect, new Scalar(255, 0, 0), 2);
+                top = new Point(bigRect.x + bigRect.width * .5, bigRect.y);
+                bottom = new Point(bigRect.x + bigRect.width * .5, bigRect.y + bigRect.height);
+                Imgproc.line(input, top, bottom, new Scalar(255, 0, 0));
             }
 
             if(top != null) {
@@ -190,46 +310,65 @@ public class AutoAlignPipeline {
 
             Imgproc.rectangle(input,new Point(120-boxWidth/2,5), new Point(120+boxWidth/2,15), new Scalar(0,0,255), 2);
 
-            if(distance > boxWidth/2){
-                pos = polePos.RIGHT;
-            }else if(distance < -boxWidth/2){
-                pos = polePos.LEFT;
-            }else{
-                pos = polePos.ON_POINT;
-            }
+            telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance;
 
-            telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance + "\npos: " + pos;
-
-            maxWidth = 0;
+            maxWidth = Double.MIN_VALUE;
+            maxWidthRotated = Double.MIN_VALUE;
 
             switch (stage){
                 case 0:
 //                    telemetry = "active stage is ycrcb" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
                     return input;
                 case 1:
 //                    telemetry = "active stage is coi" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(greyscale, midBox,new Scalar(255,0,0), 2);
-                    Imgproc.circle(mask, new Point(x,y), 2, new Scalar(255,0,0),-1);
-                    return yellow;
+                    Imgproc.circle(maskYellow, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    return output;
                 case 2:
                     telemetry = "active stage is threshold" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(threshold, midBox, new Scalar(255,0,0), 2);
-                    Imgproc.circle(yellow, new Point(x,y), 2, new Scalar(255,0,0),-1);
-                    return mask;
+                    Imgproc.circle(hsv, new Point(x,y), 2, new Scalar(255,0,0),-1);
+                    return filteredYellow;
                 case 3:
                     telemetry = "active stage is input" + "\navg 1: " + avg1 + "\navg 2: " + avg2;
-//                    Imgproc.rectangle(input, midBox,new Scalar(255,0,0), 2);
-                    return open;
+                    return filteredRed;
                 case 4:
-                    return closed;
-                case 5:
-                    return filtered;
-                case 6:
-                    return input;
+                    return filteredBlue;
                 default:
                     return output;
             }
+        }
+
+        public double width(){
+            if(bigRotatedRect.size == null){
+                return 0;
+            }else{
+                return bigRotatedRect.size.width;
+            }
+        }
+
+        public double height(){
+            if(bigRotatedRect.size == null){
+                return 0;
+            }else{
+                return bigRotatedRect.size.height;
+            }
+        }
+
+        public double angle(){
+            if(bigRotatedRect == null){
+                return 0;
+            }else{
+                return bigRotatedRect.angle;
+            }
+        }
+
+        public double getDistance(){
+            return distance;
+        }
+
+        public void setColors(boolean yellow, boolean red, boolean blue){
+            this.yellow = yellow;
+            this.red = red;
+            this.blue = blue;
         }
     }
 
@@ -383,6 +522,279 @@ public class AutoAlignPipeline {
         }
     }
 
+    public class AprilTagDetectionPipeline extends OpenCvPipeline {
+        private long nativeApriltagPtr;
+        private Mat grey = new Mat();
+        private ArrayList<AprilTagDetection> detections = new ArrayList<>();
+
+        private ArrayList<AprilTagDetection> detectionsUpdate = new ArrayList<>();
+        private final Object detectionsUpdateSync = new Object();
+
+        Mat cameraMatrix;
+
+        Scalar blue = new Scalar(7,197,235,255);
+        Scalar red = new Scalar(255,0,0,255);
+        Scalar green = new Scalar(0,255,0,255);
+        Scalar white = new Scalar(255,255,255,255);
+
+        double fx;
+        double fy;
+        double cx;
+        double cy;
+
+        // UNITS ARE METERS
+        double tagsize;
+        double tagsizeX;
+        double tagsizeY;
+
+        private float decimation;
+        private boolean needToSetDecimation;
+        private final Object decimationSync = new Object();
+
+        public AprilTagDetectionPipeline(double tagsize, double fx, double fy, double cx, double cy)
+        {
+            this.tagsize = tagsize;
+            this.tagsizeX = tagsize;
+            this.tagsizeY = tagsize;
+            this.fx = fx;
+            this.fy = fy;
+            this.cx = cx;
+            this.cy = cy;
+
+            constructMatrix();
+
+            // Allocate a native context object. See the corresponding deletion in the finalizer
+            nativeApriltagPtr = AprilTagDetectorJNI.createApriltagDetector(AprilTagDetectorJNI.TagFamily.TAG_36h11.string, 3, 3);
+        }
+
+        @Override
+        public void finalize()
+        {
+            // Might be null if createApriltagDetector() threw an exception
+            if(nativeApriltagPtr != 0)
+            {
+                // Delete the native context we created in the constructor
+                AprilTagDetectorJNI.releaseApriltagDetector(nativeApriltagPtr);
+                nativeApriltagPtr = 0;
+            }
+            else
+            {
+                System.out.println("AprilTagDetectionPipeline.finalize(): nativeApriltagPtr was NULL");
+            }
+        }
+
+        @Override
+        public Mat processFrame(Mat input)
+        {
+            // Convert to greyscale
+            Imgproc.cvtColor(input, grey, Imgproc.COLOR_RGBA2GRAY);
+
+            synchronized (decimationSync)
+            {
+                if(needToSetDecimation)
+                {
+                    AprilTagDetectorJNI.setApriltagDetectorDecimation(nativeApriltagPtr, decimation);
+                    needToSetDecimation = false;
+                }
+            }
+
+            // Run AprilTag
+            detections = AprilTagDetectorJNI.runAprilTagDetectorSimple(nativeApriltagPtr, grey, tagsize, fx, fy, cx, cy);
+
+            synchronized (detectionsUpdateSync)
+            {
+                detectionsUpdate = detections;
+            }
+
+            // For fun, use OpenCV to draw 6DOF markers on the image. We actually recompute the pose using
+            // OpenCV because I haven't yet figured out how to re-use AprilTag's pose in OpenCV.
+            for(AprilTagDetection detection : detections)
+            {
+                Pose pose = poseFromTrapezoid(detection.corners, cameraMatrix, tagsizeX, tagsizeY);
+                drawAxisMarker(input, tagsizeY/2.0, 6, pose.rvec, pose.tvec, cameraMatrix);
+                draw3dCubeMarker(input, tagsizeX, tagsizeX, tagsizeY, 5, pose.rvec, pose.tvec, cameraMatrix);
+            }
+
+            return input;
+        }
+
+        public void setDecimation(float decimation)
+        {
+            synchronized (decimationSync)
+            {
+                this.decimation = decimation;
+                needToSetDecimation = true;
+            }
+        }
+
+        public ArrayList<AprilTagDetection> getLatestDetections()
+        {
+            return detections;
+        }
+
+        public ArrayList<AprilTagDetection> getDetectionsUpdate()
+        {
+            synchronized (detectionsUpdateSync)
+            {
+                ArrayList<AprilTagDetection> ret = detectionsUpdate;
+                detectionsUpdate = null;
+                return ret;
+            }
+        }
+
+        void constructMatrix()
+        {
+            //     Construct the camera matrix.
+            //
+            //      --         --
+            //     | fx   0   cx |
+            //     | 0    fy  cy |
+            //     | 0    0   1  |
+            //      --         --
+            //
+
+            cameraMatrix = new Mat(3,3, CvType.CV_32FC1);
+
+            cameraMatrix.put(0,0, fx);
+            cameraMatrix.put(0,1,0);
+            cameraMatrix.put(0,2, cx);
+
+            cameraMatrix.put(1,0,0);
+            cameraMatrix.put(1,1,fy);
+            cameraMatrix.put(1,2,cy);
+
+            cameraMatrix.put(2, 0, 0);
+            cameraMatrix.put(2,1,0);
+            cameraMatrix.put(2,2,1);
+        }
+
+        /**
+         * Draw a 3D axis marker on a detection. (Similar to what Vuforia does)
+         *
+         * @param buf the RGB buffer on which to draw the marker
+         * @param length the length of each of the marker 'poles'
+         * @param rvec the rotation vector of the detection
+         * @param tvec the translation vector of the detection
+         * @param cameraMatrix the camera matrix used when finding the detection
+         */
+        void drawAxisMarker(Mat buf, double length, int thickness, Mat rvec, Mat tvec, Mat cameraMatrix)
+        {
+            // The points in 3D space we wish to project onto the 2D image plane.
+            // The origin of the coordinate space is assumed to be in the center of the detection.
+            MatOfPoint3f axis = new MatOfPoint3f(
+                    new Point3(0,0,0),
+                    new Point3(length,0,0),
+                    new Point3(0,length,0),
+                    new Point3(0,0,-length)
+            );
+
+            // Project those points
+            MatOfPoint2f matProjectedPoints = new MatOfPoint2f();
+            Calib3d.projectPoints(axis, rvec, tvec, cameraMatrix, new MatOfDouble(), matProjectedPoints);
+            Point[] projectedPoints = matProjectedPoints.toArray();
+
+            // Draw the marker!
+            Imgproc.line(buf, projectedPoints[0], projectedPoints[1], red, thickness);
+            Imgproc.line(buf, projectedPoints[0], projectedPoints[2], green, thickness);
+            Imgproc.line(buf, projectedPoints[0], projectedPoints[3], blue, thickness);
+
+            Imgproc.circle(buf, projectedPoints[0], thickness, white, -1);
+        }
+
+        void draw3dCubeMarker(Mat buf, double length, double tagWidth, double tagHeight, int thickness, Mat rvec, Mat tvec, Mat cameraMatrix)
+        {
+            //axis = np.float32([[0,0,0], [0,3,0], [3,3,0], [3,0,0],
+            //       [0,0,-3],[0,3,-3],[3,3,-3],[3,0,-3] ])
+
+            // The points in 3D space we wish to project onto the 2D image plane.
+            // The origin of the coordinate space is assumed to be in the center of the detection.
+            MatOfPoint3f axis = new MatOfPoint3f(
+                    new Point3(-tagWidth/2, tagHeight/2,0),
+                    new Point3( tagWidth/2, tagHeight/2,0),
+                    new Point3( tagWidth/2,-tagHeight/2,0),
+                    new Point3(-tagWidth/2,-tagHeight/2,0),
+                    new Point3(-tagWidth/2, tagHeight/2,-length),
+                    new Point3( tagWidth/2, tagHeight/2,-length),
+                    new Point3( tagWidth/2,-tagHeight/2,-length),
+                    new Point3(-tagWidth/2,-tagHeight/2,-length));
+
+            // Project those points
+            MatOfPoint2f matProjectedPoints = new MatOfPoint2f();
+            Calib3d.projectPoints(axis, rvec, tvec, cameraMatrix, new MatOfDouble(), matProjectedPoints);
+            Point[] projectedPoints = matProjectedPoints.toArray();
+
+            // Pillars
+            for(int i = 0; i < 4; i++)
+            {
+                Imgproc.line(buf, projectedPoints[i], projectedPoints[i+4], blue, thickness);
+            }
+
+            // Base lines
+            //Imgproc.line(buf, projectedPoints[0], projectedPoints[1], blue, thickness);
+            //Imgproc.line(buf, projectedPoints[1], projectedPoints[2], blue, thickness);
+            //Imgproc.line(buf, projectedPoints[2], projectedPoints[3], blue, thickness);
+            //Imgproc.line(buf, projectedPoints[3], projectedPoints[0], blue, thickness);
+
+            // Top lines
+            Imgproc.line(buf, projectedPoints[4], projectedPoints[5], green, thickness);
+            Imgproc.line(buf, projectedPoints[5], projectedPoints[6], green, thickness);
+            Imgproc.line(buf, projectedPoints[6], projectedPoints[7], green, thickness);
+            Imgproc.line(buf, projectedPoints[4], projectedPoints[7], green, thickness);
+        }
+
+        /**
+         * Extracts 6DOF pose from a trapezoid, using a camera intrinsics matrix and the
+         * original size of the tag.
+         *
+         * @param points the points which form the trapezoid
+         * @param cameraMatrix the camera intrinsics matrix
+         * @param tagsizeX the original width of the tag
+         * @param tagsizeY the original height of the tag
+         * @return the 6DOF pose of the camera relative to the tag
+         */
+        Pose poseFromTrapezoid(Point[] points, Mat cameraMatrix, double tagsizeX , double tagsizeY)
+        {
+            // The actual 2d points of the tag detected in the image
+            MatOfPoint2f points2d = new MatOfPoint2f(points);
+
+            // The 3d points of the tag in an 'ideal projection'
+            Point3[] arrayPoints3d = new Point3[4];
+            arrayPoints3d[0] = new Point3(-tagsizeX/2, tagsizeY/2, 0);
+            arrayPoints3d[1] = new Point3(tagsizeX/2, tagsizeY/2, 0);
+            arrayPoints3d[2] = new Point3(tagsizeX/2, -tagsizeY/2, 0);
+            arrayPoints3d[3] = new Point3(-tagsizeX/2, -tagsizeY/2, 0);
+            MatOfPoint3f points3d = new MatOfPoint3f(arrayPoints3d);
+
+            // Using this information, actually solve for pose
+            Pose pose = new Pose();
+            Calib3d.solvePnP(points3d, points2d, cameraMatrix, new MatOfDouble(), pose.rvec, pose.tvec, false);
+
+            return pose;
+        }
+
+        /*
+         * A simple container to hold both rotation and translation
+         * vectors, which together form a 6DOF pose.
+         */
+        class Pose
+        {
+            Mat rvec;
+            Mat tvec;
+
+            public Pose()
+            {
+                rvec = new Mat();
+                tvec = new Mat();
+            }
+
+            public Pose(Mat rvec, Mat tvec)
+            {
+                this.rvec = rvec;
+                this.tvec = tvec;
+            }
+        }
+    }
+
     public enum DuckPos{
         ONE,
         TWO,
@@ -398,48 +810,111 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
-    public enum polePos{
-        LEFT,
-        RIGHT,
-        ON_POINT
+    public void aimCam (boolean isFrontCam) {
+        double speed = 0;
+
+        if(isFrontCam) {
+            if (frontPoleDetector.getDistance() > 10 || frontPoleDetector.getDistance() < -10){
+                speed = (frontPoleDetector.getDistance() / 120) * rate;
+            }
+        }else{
+            if (backPoleDetector.getDistance() > 10 || backPoleDetector.getDistance() < -10){
+                speed = (backPoleDetector.getDistance() / 120) * rate;
+            }
+        }
+
+        backPoint += speed;
+
+        back.setPosition(backPoint);
     }
 
-    public polePos getPolePos(){
-        return pos;
+    public double align(double camPos, double maxPower, boolean usingFrontCam){
+        double speed;
+        if(usingFrontCam){
+            front.setPosition(camPos);
+            speed = frontPoleDetector.getDistance()/120;
+        }else{
+            back.setPosition(camPos);
+            speed = backPoleDetector.getDistance()/120;
+        }
+
+
+        double output = Math.min(maxPower,speed);
+        output = Math.max(-maxPower, output);
+        return output;
     }
 
-    public void align(){
+
+    public void turnToAlign(double camPos, boolean usingFrontCam) {
         time.reset();
-        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
-            telemetry = "aligning, pos is: " + pos;
-            if (pos.equals(polePos.RIGHT)) {
+        while (time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
+            fl.setPower(align(camPos, .1, usingFrontCam));
+            br.setPower(-align(camPos, .1, usingFrontCam));
+            bl.setPower(align(camPos, .1, usingFrontCam));
+            fr.setPower(-align(camPos, .1 , usingFrontCam));
+
+            if(!aligned(usingFrontCam)){
                 startTime = time.milliseconds();
-                bl.setPower(.1);
-                fl.setPower(.1);
-                br.setPower(-.1);
-                fr.setPower(-.1);
-            } else if (pos.equals(polePos.LEFT)) {
-                startTime = time.milliseconds();
-                bl.setPower(-.1);
-                fl.setPower(-.1);
-                br.setPower(.1);
-                fr.setPower(.1);
-            } else if(pos.equals(polePos.ON_POINT)){
-                bl.setPower(0);
-                fl.setPower(0);
-                br.setPower(0);
-                fr.setPower(0);
             }
         }
     }
 
-    public void useFrontCam(){
-        switchableWebcam.setActiveCamera(frontCam);
-        switchableWebcam.setPipeline(sleeveDetector);
+    public void strafeToAlign(double camPos, boolean usingFrontCam){
+        time.reset();
+        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
+            fl.setPower(align(camPos, .5, usingFrontCam));
+            br.setPower(align(camPos, .5, usingFrontCam));
+            bl.setPower(-align(camPos, .5, usingFrontCam));
+            fr.setPower(-align(camPos, .5, usingFrontCam));
+
+            if(!aligned(usingFrontCam)){
+                startTime = time.milliseconds();
+            }
+        }
     }
 
-    public void useBackCam() {
-        switchableWebcam.setActiveCamera(backCam);
-        switchableWebcam.setPipeline(poleDetector);
+//    public double targetDistance(double distance, double maxPower) {
+//        double speed = (backDistance.getDistance(DistanceUnit.CM) - distance) / 30;
+//
+//        speed = Math.min(maxPower, speed);
+//
+//        return speed;
+//    }
+
+    public int AprilTagID(boolean isUsingFrontCam){
+        ArrayList<AprilTagDetection> detections = new ArrayList<AprilTagDetection>();
+        if(isUsingFrontCam) {
+            detections = frontSleeveDetector.getLatestDetections();
+        }else{
+            detections = backSleeveDetector.getLatestDetections();
+        }
+
+        if(detections.size() != 0) {
+            return detections.get(0).id;
+        }else{
+            return 6;
+        }
+    }
+
+    public boolean aligned(boolean isUsingFrontCam){
+        if(isUsingFrontCam) {
+            return -boxWidth / 2 < frontPoleDetector.getDistance() && frontPoleDetector.getDistance() < boxWidth / 2;
+        }else{
+            return -boxWidth / 2 < backPoleDetector.getDistance() && backPoleDetector.getDistance() < boxWidth / 2;
+        }
+    }
+
+    public void setPipelines(String front, String back){
+        if(front.equals("pole")){
+            frontCam.setPipeline(frontPoleDetector);
+        }else{
+            frontCam.setPipeline(frontSleeveDetector);
+        }
+
+        if(back.equals("pole")){
+            backCam.setPipeline(backPoleDetector);
+        }else{
+            backCam.setPipeline(backSleeveDetector);
+        }
     }
 }
