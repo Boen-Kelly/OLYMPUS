@@ -251,6 +251,9 @@ public class JudgingLights extends LinearOpMode {
                 sleep (2000);
                 leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE);
             }
+            if(gamepad1.right_stick_y != 0 && arm.getTargetPosition() != 0){
+                arm.setTargetPosition(arm.getTargetPosition()+(int)(gamepad1.right_stick_y*10));
+            }
         }
     }
     public void lightTimer(double runtime, RevBlinkinLedDriver Blinker){
