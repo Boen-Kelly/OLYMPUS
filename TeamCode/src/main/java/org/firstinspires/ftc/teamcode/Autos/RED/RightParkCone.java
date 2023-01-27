@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Autos.BLUE;
+package org.firstinspires.ftc.teamcode.Autos.RED;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 //-2.91
 //-31.04
 //3.65
-@Autonomous(name = "BLUE AUTO")
+@Autonomous(name = "RED AUTO")
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
@@ -52,7 +52,7 @@ public class RightParkCone extends LinearOpMode {
         ElapsedTime timer = new ElapsedTime();
 
         pipeline.backPoleDetector.setColors(true, false, false);
-        pipeline.frontPoleDetector.setColors(false, false, true);
+        pipeline.frontPoleDetector.setColors(false, true, false);
 
         DistanceSensor backDist, frontDist;
 
