@@ -178,7 +178,7 @@ public class RightParkCone extends LinearOpMode {
                         lift.lift(1000, true);
                         lift.setSlurpPower(1);
                     })
-                    .forward(distanceToCone-7)
+                    .forward(distanceToCone-4.5)
                     .build();
 
             drive.followTrajectory(collect);

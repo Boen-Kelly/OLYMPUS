@@ -32,8 +32,11 @@ package org.firstinspires.ftc.teamcode.tests;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
 /**
@@ -59,6 +62,7 @@ public class MotorEncoderTestsManual extends LinearOpMode {
     DcMotor bl, br, fl, fr;
     TouchSensor liftStop;
     DcMotor arm;
+    DistanceSensor back, front;
 
     @Override
     public void runOpMode() {
@@ -77,6 +81,8 @@ public class MotorEncoderTestsManual extends LinearOpMode {
         fl = hardwareMap.get(DcMotor.class, "fl");
         fr = hardwareMap.get(DcMotor.class, "fr");
         arm = hardwareMap.get(DcMotor.class, "arm");
+        back = hardwareMap.get(DistanceSensor.class, "backDist");
+        front = hardwareMap.get(DistanceSensor.class, "frontDist");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
@@ -107,6 +113,8 @@ public class MotorEncoderTestsManual extends LinearOpMode {
             telemetry.addData("br", br.getCurrentPosition());
             telemetry.addData("fl", fl.getCurrentPosition());
             telemetry.addData("fr", fr.getCurrentPosition());
+            telemetry.addData("back", back.getDistance(DistanceUnit.INCH));
+            telemetry.addData("front", front.getDistance(DistanceUnit.INCH));
             telemetry.update();
         }
     }
