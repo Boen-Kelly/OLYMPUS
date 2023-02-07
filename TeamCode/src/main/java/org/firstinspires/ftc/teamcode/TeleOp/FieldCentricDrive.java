@@ -37,6 +37,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -105,6 +106,8 @@ public class FieldCentricDrive extends LinearOpMode {
         DcMotor Lift2;
         DcMotor arm;
         CRServo Slurper;
+        Servo lilArm;
+        Servo lilArm2;
         TouchSensor Lift, armStop;
 
         double slowSpeed = .8;
@@ -113,9 +116,11 @@ public class FieldCentricDrive extends LinearOpMode {
         boolean toggle = true;
         boolean toggle2 = true;
         boolean toggle3 = true;
+        boolean toggle4 = true;
         boolean armUp = false;
         boolean parkingArm = false;
         boolean fullPwrDelivery = false;
+        boolean lilArmActivation = false;
 
         boolean isLiftUp = false;
         int robotPresetHeight = 1;
@@ -168,6 +173,8 @@ public class FieldCentricDrive extends LinearOpMode {
         Lift1 = hardwareMap.get(DcMotor.class, "Lift1");
         Lift2 = hardwareMap.get(DcMotor.class, "Lift2");
         Slurper = hardwareMap.get(CRServo.class, "Slurper");
+        lilArm = hardwareMap.get(Servo.class, "lilArm1");
+        lilArm2 = hardwareMap.get(Servo.class, "lilArm2");
 
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
@@ -227,7 +234,7 @@ public class FieldCentricDrive extends LinearOpMode {
             leftBackDrive.setPower(v3 * slowSpeed);
             rightBackDrive.setPower(v4 * slowSpeed);
 
-            if(isLiftUp && fullPwrDelivery == false){
+            if(gamepad1.left_trigger > 0.1f){
                 slowSpeed = .75 ;
                 telemetry.addData("Slow", slowSpeed);
             }else{
@@ -246,9 +253,9 @@ public class FieldCentricDrive extends LinearOpMode {
             }
 
             if(armUp && isLiftUp){
-                arm.setTargetPosition(-3400 + armFineTune);
+                arm.setTargetPosition(-1286 + armFineTune);
             }else if(parkingArm){
-                arm.setTargetPosition(-1250);
+                arm.setTargetPosition(-473);
             }else{
                 arm.setTargetPosition(0);
             }
@@ -397,6 +404,14 @@ public class FieldCentricDrive extends LinearOpMode {
             }else{
                 toggle = true;
             }
+
+            if(gamepad1.right_bumper){
+                lilArm.setPosition(0.655);
+                lilArm2.setPosition(0.367);
+            }else{
+                lilArm.setPosition(-0.1);
+                lilArm2.setPosition(0.8);
+            }
             if(gamepad1.right_stick_button){
                 arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
@@ -449,6 +464,8 @@ public class FieldCentricDrive extends LinearOpMode {
             telemetry.addData("armPos", arm.getCurrentPosition());
             telemetry.addData("height", height);
             telemetry.addData("heading", heading);
+            telemetry.addData("Servo", lilArm.getPosition());
+            telemetry.addData("Servo 2", lilArm2.getPosition());
             telemetry.update();
         }
     }
