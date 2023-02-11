@@ -80,6 +80,7 @@ public class FieldCentricDrive extends LinearOpMode {
     private DcMotor leftFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private DcMotor rightFrontDrive = null;
+    public static int armPos = 1350;
 
     RevBlinkinLedDriver leds;
 
@@ -242,7 +243,7 @@ public class FieldCentricDrive extends LinearOpMode {
             }
 
             if(armUp && isLiftUp){
-                arm.setTargetPosition(-3400 + armFineTune);
+                arm.setTargetPosition(-armPos + armFineTune);
             }else{
                 arm.setTargetPosition(0);
             }
