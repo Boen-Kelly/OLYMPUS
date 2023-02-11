@@ -20,26 +20,27 @@ import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 public class AutoAlignTest extends LinearOpMode {
     public static double cameraPoint = .75;
     public void runOpMode(){
-        DcMotor bl, br, fl, fr;
+//        DcMotor bl, br, fl, fr;
         DistanceSensor backDist, frontDist;
+        double distance;
 
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
-        bl = hardwareMap.get(DcMotor.class, "bl");
-        br = hardwareMap.get(DcMotor.class, "br");
-        fl = hardwareMap.get(DcMotor.class, "fl");
-        fr = hardwareMap.get(DcMotor.class, "fr");
+//        bl = hardwareMap.get(DcMotor.class, "bl");
+//        br = hardwareMap.get(DcMotor.class, "br");
+//        fl = hardwareMap.get(DcMotor.class, "fl");
+//        fr = hardwareMap.get(DcMotor.class, "fr");
         backDist = hardwareMap.get(DistanceSensor.class, "backDist");
         frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
         Rev2mDistanceSensor dist = (Rev2mDistanceSensor) backDist;
 
-        bl.setDirection(DcMotorSimple.Direction.REVERSE);
-        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+//        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+//        fl.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         while (!isStarted() && !isStopRequested()) {
             pipeline.setPipelines("pole", "pole");
@@ -61,23 +62,24 @@ public class AutoAlignTest extends LinearOpMode {
 //            bl.setPower(pipeline.align(cameraPoint, .1, false));
 //            fr.setPower(-pipeline.align(cameraPoint, .1, false));
 
-            fl.setPower(pipeline.align(cameraPoint, .3, true));
-            br.setPower(-pipeline.align(cameraPoint, .3, true));
-            bl.setPower(pipeline.align(cameraPoint, .3, true));
-            fr.setPower(-pipeline.align(cameraPoint, .3 , true));
+//            fl.setPower(pipeline.align(cameraPoint, .3, true));
+//            br.setPower(-pipeline.align(cameraPoint, .3, true));
+//            bl.setPower(pipeline.align(cameraPoint, .3, true));
+//            fr.setPower(-pipeline.align(cameraPoint, .3 , true));
 
 //            pipeline.aimCam();
+            pipeline.aimCam(true);
+            pipeline.masterAlign(5, true);
 
 
             telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("back distance", backDist.getDistance(DistanceUnit.CM));
-            telemetry.addData("front distance", frontDist.getDistance(DistanceUnit.CM));
-            telemetry.addData("dist", dist.getDistance(DistanceUnit.CM));
-            telemetry.addData("average", (backDist.getDistance(DistanceUnit.CM) + dist.getDistance(DistanceUnit.CM))/2);
-//            telemetry.addData("width", pipeline.width());
-//            telemetry.addData("height", pipeline.height());
-//            telemetry.addData("angle", pipeline.angle());
-//            telemetry.addData("distance speed", pipeline.targetDistance(.7,.5));
+            telemetry.addData("width", pipeline.getMaxWidth(false));
+            telemetry.addData("height", pipeline.getMaxHeight(false));
+            telemetry.addData("distance", (int)(382.3333333 / pipeline.getMaxWidth(false)));
+            telemetry.addData("calculated dist", pipeline.getRobotDistance(true));
+            telemetry.addData("angle", pipeline.getAngle(true));
+            telemetry.addData("xDist", pipeline.xDist);
+            telemetry.addData("yDist", pipeline.yDist);
             telemetry.update();
         }
     }

@@ -50,9 +50,13 @@ public class AutoAlignPipeline {
     public static double boxWidth = 20;
     double startTime = 0;
     double maxWidth = 0;
-    double maxWidthRotated = 0;
     public static double rate = .0005;
     public static double frontPoint = .84, backPoint = .8;
+
+    public final double ROBOT_X = -4.75;
+    public final double ROBOT_Y = -5.75;
+    public static double lowerBound = 0;
+    public static double upperBound = .85;
 
 
     DcMotor bl, br, fl, fr;
@@ -74,6 +78,8 @@ public class AutoAlignPipeline {
     double cx = 402.145;
     double cy = 221.506;
 
+    public double xDist = 0, yDist = 0;
+
     // UNITS ARE METERS
     double tagsize = 0.166;
 
@@ -88,6 +94,7 @@ public class AutoAlignPipeline {
         front = hardwareMap.get(Servo.class, "front");
         back = hardwareMap.get(Servo.class, "back");
 
+        front.scaleRange(lowerBound, upperBound);
 
         front.setPosition(frontPoint);
         back.setPosition(backPoint);
@@ -157,7 +164,7 @@ public class AutoAlignPipeline {
 
     public class PoleDetector extends OpenCvPipeline {
         Rect bigRect = new Rect();
-        RotatedRect bigRotatedRect = new RotatedRect();
+        public RotatedRect bigRotatedRect = new RotatedRect();
 
         int stage = 0;
         Mat hsv = new Mat();
@@ -186,6 +193,7 @@ public class AutoAlignPipeline {
 
         Mat kernel = new Mat(12,12, CvType.CV_8UC1);
         double maxWidth = 0;
+        double maxRotatedWidth = 0;
         double avg1, avg2;
         double distance = 0;
 
@@ -283,8 +291,8 @@ public class AutoAlignPipeline {
             for(MatOfPoint2f box:newContours){
                 rotatedBoundingRect = Imgproc.minAreaRect(box);
 
-                if(rotatedBoundingRect.size.width > maxWidthRotated){
-                    maxWidthRotated = rotatedBoundingRect.size.width;
+                if(width(rotatedBoundingRect) > maxRotatedWidth){
+                    maxRotatedWidth = width(rotatedBoundingRect);
                     bigRotatedRect = rotatedBoundingRect;
                 }
             }
@@ -313,7 +321,7 @@ public class AutoAlignPipeline {
             telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance;
 
             maxWidth = Double.MIN_VALUE;
-            maxWidthRotated = Double.MIN_VALUE;
+            maxRotatedWidth = Double.MIN_VALUE;
 
             switch (stage){
                 case 0:
@@ -337,19 +345,19 @@ public class AutoAlignPipeline {
             }
         }
 
-        public double width(){
-            if(bigRotatedRect.size == null){
+        public double width(RotatedRect rect){
+            if(rect.size == null){
                 return 0;
             }else{
-                return bigRotatedRect.size.width;
+                return Math.min(rect.size.width, rect.size.height);
             }
         }
 
-        public double height(){
-            if(bigRotatedRect.size == null){
+        public double height(RotatedRect rect){
+            if(rect.size == null){
                 return 0;
             }else{
-                return bigRotatedRect.size.height;
+                return Math.max(rect.size.height, rect.size.width);
             }
         }
 
@@ -817,15 +825,18 @@ public class AutoAlignPipeline {
             if (frontPoleDetector.getDistance() > 10 || frontPoleDetector.getDistance() < -10){
                 speed = (frontPoleDetector.getDistance() / 120) * rate;
             }
+            frontPoint += speed;
+
+            front.setPosition(frontPoint);
         }else{
             if (backPoleDetector.getDistance() > 10 || backPoleDetector.getDistance() < -10){
                 speed = (backPoleDetector.getDistance() / 120) * rate;
             }
+            backPoint += speed;
+            back.setPosition(backPoint);
         }
 
-        backPoint += speed;
 
-        back.setPosition(backPoint);
     }
 
     public double align(double camPos, double maxPower, boolean usingFrontCam){
@@ -873,14 +884,6 @@ public class AutoAlignPipeline {
         }
     }
 
-//    public double targetDistance(double distance, double maxPower) {
-//        double speed = (backDistance.getDistance(DistanceUnit.CM) - distance) / 30;
-//
-//        speed = Math.min(maxPower, speed);
-//
-//        return speed;
-//    }
-
     public int AprilTagID(boolean isUsingFrontCam){
         ArrayList<AprilTagDetection> detections = new ArrayList<AprilTagDetection>();
         if(isUsingFrontCam) {
@@ -916,5 +919,41 @@ public class AutoAlignPipeline {
         }else{
             backCam.setPipeline(backSleeveDetector);
         }
+    }
+
+    public double getMaxWidth(boolean usingFrontCam){
+        if(usingFrontCam){
+            return frontPoleDetector.width(frontPoleDetector.bigRotatedRect);
+        }else{
+            return backPoleDetector.width(backPoleDetector.bigRotatedRect);
+        }
+    }
+
+    public double getMaxHeight(boolean usingFrontCam){
+        if(usingFrontCam){
+            return frontPoleDetector.height(frontPoleDetector.bigRotatedRect);
+        }else{
+            return backPoleDetector.height(backPoleDetector.bigRotatedRect);
+        }
+    }
+
+    public double getRobotDistance(boolean usingFrontCam){
+        return 382.3333333/getMaxWidth(usingFrontCam);
+    }
+
+    public double getAngle(boolean usingFrontCam){
+        if(usingFrontCam){
+            return front.getPosition() * 180;
+        }else{
+            return back.getPosition() * 180;
+        }
+    }
+
+    public void masterAlign(double distance, boolean usingFrontCam){
+        double r = getRobotDistance(usingFrontCam);
+        double angle = getAngle(usingFrontCam);
+
+        xDist = (r * Math.cos(angle)) - ROBOT_X - distance;
+        yDist = (r * Math.sin(angle)) - ROBOT_Y;
     }
 }
