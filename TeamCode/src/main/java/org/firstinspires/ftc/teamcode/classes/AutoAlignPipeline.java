@@ -48,21 +48,6 @@ public class AutoAlignPipeline {
 
     public static int x = 10, y = 10;
     public static double boxWidth = 20;
-    double startTime = 0;
-    double maxWidth = 0;
-    public static double rate = .0005;
-    public static double frontPoint = .84, backPoint = .8;
-
-    public final double ROBOT_X = -4.75;
-    public final double ROBOT_Y = -5.75;
-    public static double lowerBound = 0;
-    public static double upperBound = .85;
-
-
-    DcMotor bl, br, fl, fr;
-    Servo front, back;
-
-    ElapsedTime time = new ElapsedTime();
 
     DuckPos position;
     public static Rect redRect = new Rect(105,245,15,15);
@@ -78,36 +63,11 @@ public class AutoAlignPipeline {
     double cx = 402.145;
     double cy = 221.506;
 
-    public double xDist = 0, yDist = 0;
-
     // UNITS ARE METERS
     double tagsize = 0.166;
 
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
-
-        bl = hardwareMap.get(DcMotor.class, "bl");
-        br = hardwareMap.get(DcMotor.class, "br");
-        fl = hardwareMap.get(DcMotor.class, "fl");
-        fr = hardwareMap.get(DcMotor.class, "fr");
-
-        front = hardwareMap.get(Servo.class, "front");
-        back = hardwareMap.get(Servo.class, "back");
-
-        front.scaleRange(lowerBound, upperBound);
-
-        front.setPosition(frontPoint);
-        back.setPosition(backPoint);
-
-        bl.setDirection(DcMotorSimple.Direction.REVERSE);
-        fl.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         int[] viewportContainerIds = OpenCvCameraFactory.getInstance()
                 .splitLayoutForMultipleViewports(
@@ -818,72 +778,6 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
-    public void aimCam (boolean isFrontCam) {
-        double speed = 0;
-
-        if(isFrontCam) {
-            if (frontPoleDetector.getDistance() > 10 || frontPoleDetector.getDistance() < -10){
-                speed = (frontPoleDetector.getDistance() / 120) * rate;
-            }
-            frontPoint += speed;
-
-            front.setPosition(frontPoint);
-        }else{
-            if (backPoleDetector.getDistance() > 10 || backPoleDetector.getDistance() < -10){
-                speed = (backPoleDetector.getDistance() / 120) * rate;
-            }
-            backPoint += speed;
-            back.setPosition(backPoint);
-        }
-
-
-    }
-
-    public double align(double camPos, double maxPower, boolean usingFrontCam){
-        double speed;
-        if(usingFrontCam){
-            front.setPosition(camPos);
-            speed = frontPoleDetector.getDistance()/120;
-        }else{
-            back.setPosition(camPos);
-            speed = backPoleDetector.getDistance()/120;
-        }
-
-
-        double output = Math.min(maxPower,speed);
-        output = Math.max(-maxPower, output);
-        return output;
-    }
-
-
-    public void turnToAlign(double camPos, boolean usingFrontCam) {
-        time.reset();
-        while (time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
-            fl.setPower(align(camPos, .1, usingFrontCam));
-            br.setPower(-align(camPos, .1, usingFrontCam));
-            bl.setPower(align(camPos, .1, usingFrontCam));
-            fr.setPower(-align(camPos, .1 , usingFrontCam));
-
-            if(!aligned(usingFrontCam)){
-                startTime = time.milliseconds();
-            }
-        }
-    }
-
-    public void strafeToAlign(double camPos, boolean usingFrontCam){
-        time.reset();
-        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
-            fl.setPower(align(camPos, .5, usingFrontCam));
-            br.setPower(align(camPos, .5, usingFrontCam));
-            bl.setPower(-align(camPos, .5, usingFrontCam));
-            fr.setPower(-align(camPos, .5, usingFrontCam));
-
-            if(!aligned(usingFrontCam)){
-                startTime = time.milliseconds();
-            }
-        }
-    }
-
     public int AprilTagID(boolean isUsingFrontCam){
         ArrayList<AprilTagDetection> detections = new ArrayList<AprilTagDetection>();
         if(isUsingFrontCam) {
@@ -896,14 +790,6 @@ public class AutoAlignPipeline {
             return detections.get(0).id;
         }else{
             return 6;
-        }
-    }
-
-    public boolean aligned(boolean isUsingFrontCam){
-        if(isUsingFrontCam) {
-            return -boxWidth / 2 < frontPoleDetector.getDistance() && frontPoleDetector.getDistance() < boxWidth / 2;
-        }else{
-            return -boxWidth / 2 < backPoleDetector.getDistance() && backPoleDetector.getDistance() < boxWidth / 2;
         }
     }
 
@@ -935,25 +821,5 @@ public class AutoAlignPipeline {
         }else{
             return backPoleDetector.height(backPoleDetector.bigRotatedRect);
         }
-    }
-
-    public double getRobotDistance(boolean usingFrontCam){
-        return 382.3333333/getMaxWidth(usingFrontCam);
-    }
-
-    public double getAngle(boolean usingFrontCam){
-        if(usingFrontCam){
-            return front.getPosition() * 180;
-        }else{
-            return back.getPosition() * 180;
-        }
-    }
-
-    public void masterAlign(double distance, boolean usingFrontCam){
-        double r = getRobotDistance(usingFrontCam);
-        double angle = getAngle(usingFrontCam);
-
-        xDist = (r * Math.cos(angle)) - ROBOT_X - distance;
-        yDist = (r * Math.sin(angle)) - ROBOT_Y;
     }
 }

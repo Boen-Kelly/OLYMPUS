@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.classes.AlignThread;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 
 @TeleOp
@@ -25,6 +26,8 @@ public class AutoAlignTest extends LinearOpMode {
         double distance;
 
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
+        AlignThread aligner = new AlignThread(hardwareMap);
+        Thread alignerThread = new Thread(aligner);
 
 //        bl = hardwareMap.get(DcMotor.class, "bl");
 //        br = hardwareMap.get(DcMotor.class, "br");
@@ -53,8 +56,8 @@ public class AutoAlignTest extends LinearOpMode {
 
         waitForStart();
 
-
-
+        alignerThread.start();
+        aligner.engageMaster(5, true);
         while (opModeIsActive()){
 
 //            fl.setPower(pipeline.align(cameraPoint, .1, false));
@@ -68,19 +71,18 @@ public class AutoAlignTest extends LinearOpMode {
 //            fr.setPower(-pipeline.align(cameraPoint, .3 , true));
 
 //            pipeline.aimCam();
-            pipeline.aimCam(true);
-            pipeline.masterAlign(5, true);
 
 
             telemetry.addData("Pipeline says", pipeline);
             telemetry.addData("width", pipeline.getMaxWidth(false));
             telemetry.addData("height", pipeline.getMaxHeight(false));
             telemetry.addData("distance", (int)(382.3333333 / pipeline.getMaxWidth(false)));
-            telemetry.addData("calculated dist", pipeline.getRobotDistance(true));
-            telemetry.addData("angle", pipeline.getAngle(true));
-            telemetry.addData("xDist", pipeline.xDist);
-            telemetry.addData("yDist", pipeline.yDist);
+            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
+            telemetry.addData("angle", aligner.getAngle(true));
+            telemetry.addData("xDist", aligner.xDist);
+            telemetry.addData("yDist", aligner.yDist);
             telemetry.update();
         }
+        alignerThread.interrupt();
     }
 }
