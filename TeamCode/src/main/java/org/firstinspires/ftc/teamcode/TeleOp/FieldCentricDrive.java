@@ -84,7 +84,6 @@ public class FieldCentricDrive extends LinearOpMode {
 
     RevBlinkinLedDriver leds;
 
-    int bottom = 0;
 
     BNO055IMU imu;
 
@@ -110,6 +109,7 @@ public class FieldCentricDrive extends LinearOpMode {
 
         double slowSpeed = .8;
         int bottom = 0;
+        double bottomAdjust = 0;
 
         boolean toggle = true;
         boolean toggle2 = true;
@@ -266,12 +266,14 @@ public class FieldCentricDrive extends LinearOpMode {
                 bottom = Lift1.getCurrentPosition();
             }
 
+            bottomAdjust += .001 * gamepad2.right_stick_y;
+
             if(gamepad2.right_trigger > 0 && gamepad2.left_trigger > 0 && gamepad2.y) {
                 height = 950;
                 fineTune = 0;
                 armUp = false;
                 parkingArm = true;
-                bottom = 0;
+                bottom = 0 + (int)bottomAdjust;
                 leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE);
             }
             else if(gamepad2.right_trigger > 0 && gamepad2.y){
@@ -279,7 +281,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = true;
                 parkingArm = false;
-                bottom = 0;
+                bottom = 0 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.HOT_PINK);
                 }
@@ -288,7 +290,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = true;
                 parkingArm = false;
-                bottom = 0;
+                bottom = 0 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
                 }
@@ -297,7 +299,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = true;
                 parkingArm = false;
-                bottom = 0;
+                bottom = 0 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
                 }
@@ -306,7 +308,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 0;
+                bottom = 0 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
                 }
@@ -315,7 +317,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 500;
+                bottom = 500 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
@@ -324,7 +326,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 450;
+                bottom = 450 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
@@ -333,7 +335,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 350;
+                bottom = 350 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
@@ -342,7 +344,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 250;
+                bottom = 250 + (int)bottomAdjust;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
@@ -350,7 +352,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 height = 500;
                 fineTune = 0;
                 armUp = false;
-                bottom = 0;
+                bottom = 0 + (int)bottomAdjust;
                 Slurper.setPower(-1);
                 savedTime = 0;
                 if(runtime.seconds() < 115) {
@@ -364,9 +366,11 @@ public class FieldCentricDrive extends LinearOpMode {
             }else if(gamepad2.dpad_down) {
                 fineTune = fineTune - 2;
             }
+
+
             if(gamepad2.right_bumper){
                 if(toggle2){
-                    armFineTune -= 200;
+                    armFineTune -= 60;
                     toggle2 = false;
                 }
             }else{
@@ -374,7 +378,7 @@ public class FieldCentricDrive extends LinearOpMode {
             }
             if(gamepad2.left_bumper){
                 if(toggle3){
-                    armFineTune += 100;
+                    armFineTune += 60;
                     toggle3 = false;
                 }
             }else{
