@@ -49,6 +49,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+import org.firstinspires.ftc.teamcode.classes.IntakeThread;
+
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 
 import java.io.File;
@@ -80,7 +82,7 @@ public class FieldCentricDrive extends LinearOpMode {
     private DcMotor leftFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private DcMotor rightFrontDrive = null;
-    public static int armPos = 1350;
+    public static int armPos = 1410;
 
     RevBlinkinLedDriver leds;
 
@@ -95,7 +97,7 @@ public class FieldCentricDrive extends LinearOpMode {
 
         //RevBlinkinLedDriver blinkinLedDriver;
         //RevBlinkinLedDriver.BlinkinPattern pattern;
-
+        IntakeThread slurperThread = new IntakeThread(hardwareMap, gamepad1);
         //imu set up!
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
@@ -196,6 +198,7 @@ public class FieldCentricDrive extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        slurperThread.start();
 
         arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 //        Lift1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -236,14 +239,9 @@ public class FieldCentricDrive extends LinearOpMode {
                 telemetry.addData("Fast", slowSpeed);
             }
 
-            if(gamepad1.a){
-                Slurper.setPower(-1);
-            }else if(gamepad1.y){
+            if(gamepad1.y){
                 savedTime = runtime.seconds();
-                Slurper.setPower(1);
                 fullPwrDelivery = true;
-            }else if(gamepad1.b){
-                Slurper.setPower(0);
             }
 
             if(armUp && isLiftUp){
@@ -366,7 +364,7 @@ public class FieldCentricDrive extends LinearOpMode {
             }
             if(gamepad2.right_bumper){
                 if(toggle2){
-                    armFineTune -= 200;
+                    armFineTune -= 60;
                     toggle2 = false;
                 }
             }else{
@@ -374,7 +372,7 @@ public class FieldCentricDrive extends LinearOpMode {
             }
             if(gamepad2.left_bumper){
                 if(toggle3){
-                    armFineTune += 100;
+                    armFineTune += 60;
                     toggle3 = false;
                 }
             }else{
@@ -450,8 +448,10 @@ public class FieldCentricDrive extends LinearOpMode {
             telemetry.addData("armPos", arm.getCurrentPosition());
             telemetry.addData("height", height);
             telemetry.addData("heading", heading);
+            telemetry.addData("Servo Power", Slurper.getPower());
             telemetry.update();
         }
+        slurperThread.interrupt();
     }
     public void lightTimer(double runtime, RevBlinkinLedDriver Blinker){
         double secLightSwitch = 0;
