@@ -1,15 +1,11 @@
 
-package org.firstinspires.ftc.teamcode.classes;
+package org.firstinspires.ftc.teamcode.oldcode.tests.classes;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.checkerframework.checker.units.qual.A;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -34,11 +30,13 @@ import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Config
 public class AutoAlignPipeline {
     OpenCvWebcam backCam;
     OpenCvWebcam frontCam;
+    ExposureControl frontExposureControl, backExposureControl;
 
     String telemetry = "waiting for input";
     public static int threshVal = 128;
@@ -822,4 +820,35 @@ public class AutoAlignPipeline {
             return backPoleDetector.height(backPoleDetector.bigRotatedRect);
         }
     }
+
+    /** The code below is the extent to which I know ExposureControl. I created an
+     * ExposureControl variable for each camera at the beginning of this class.
+     * Using the methods below, I was able to prevent the exposure from being automated.
+     * However, after using the method setExposure(long exposure){...} I discovered that the
+     * exposure was not actually being set to the exposure variable which I got from user
+     * input. I think this may have to do with my lack of experience with the variable type
+     * "long" or it might have to do with AE priority, which I wasn't able to look into.
+     * Here is the link to a FIRST article I found that might help.
+     * https://ftc-docs.firstinspires.org/programming_resources/vision/webcam_controls/webcam-controls.html
+    public long setExposure(long exposure){
+        frontExposureControl = frontCam.getExposureControl();
+        backExposureControl = backCam.getExposureControl();
+
+        frontExposureControl.setMode(ExposureControl.Mode.Manual);
+        backExposureControl.setMode(ExposureControl.Mode.Manual);
+
+        frontExposureControl.setExposure(exposure, TimeUnit.MILLISECONDS);
+        backExposureControl.setExposure(exposure, TimeUnit.MILLISECONDS);
+
+        return frontExposureControl.getExposure(TimeUnit.MILLISECONDS);
+    }
+
+    public double getMaxExposure(boolean frontCam){
+        if(frontCam){
+            return frontExposureControl.getMaxExposure(TimeUnit.MILLISECONDS);
+        }else{
+            return backExposureControl.getMaxExposure(TimeUnit.MILLISECONDS);
+        }
+    }
+    */
 }

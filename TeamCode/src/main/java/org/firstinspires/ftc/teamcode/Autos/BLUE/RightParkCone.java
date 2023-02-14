@@ -5,25 +5,18 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
-import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySequence;
-import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
-import org.firstinspires.ftc.teamcode.classes.LiftArm;
-import org.firstinspires.ftc.teamcode.classes.MLToolChain;
-import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
-import org.openftc.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.teamcode.oldcode.tests.classes.AutoAlignPipeline;
+import org.firstinspires.ftc.teamcode.oldcode.tests.classes.LiftArm;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 //-2.91
@@ -107,7 +100,7 @@ public class RightParkCone extends LinearOpMode {
 
 //        drive.turn(Math.toRadians(-40));
 
-        pipeline.turnToAlign(.77, false);
+//        pipeline.turnToAlign(.77, false);
 
         distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
@@ -160,7 +153,7 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectory(pickupcone);
 
-            pipeline.turnToAlign(.83, true);
+//            pipeline.turnToAlign(.83, true);
 
 //            sleep(500);
             distanceToCone = frontDist.getDistance(DistanceUnit.INCH);
@@ -207,7 +200,7 @@ public class RightParkCone extends LinearOpMode {
             telemetry.addLine("aligning");
             telemetry.update();
 
-            pipeline.turnToAlign(.77, false);
+//            pipeline.turnToAlign(.77, false);
 //            sleep(500);
             distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 

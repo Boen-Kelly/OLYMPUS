@@ -1,13 +1,16 @@
-package org.firstinspires.ftc.teamcode.classes;
+package org.firstinspires.ftc.teamcode.oldcode.tests.classes;
 
-import static org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline.boxWidth;
+import static org.firstinspires.ftc.teamcode.oldcode.tests.classes.AutoAlignPipeline.boxWidth;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
+@Config
 public class AlignThread implements Runnable{
     private boolean usingFrontCam;
     private boolean masterEngaged = false;
@@ -15,7 +18,7 @@ public class AlignThread implements Runnable{
     private double distanceToTarget = 0;
     public static double rate = .0005;
     public static double frontPoint = .84, backPoint = .8;
-    public final double ROBOT_X = -4.75;
+    public final double ROBOT_X = -3.75;
     public final double ROBOT_Y = -5.75;
     public double xDist = 0, yDist = 0;
     double startTime = 0;
@@ -26,13 +29,13 @@ public class AlignThread implements Runnable{
     Servo front, back;
 
     private AutoAlignPipeline pipeline;
-    public AlignThread(HardwareMap hardwareMap){
+    public AlignThread(HardwareMap hardwareMap, AutoAlignPipeline pipeline){
 
         bl = hardwareMap.get(DcMotor.class, "bl");
         br = hardwareMap.get(DcMotor.class, "br");
         fl = hardwareMap.get(DcMotor.class, "fl");
         fr = hardwareMap.get(DcMotor.class, "fr");
-        pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 1");
+        this.pipeline = pipeline;
         front = hardwareMap.get(Servo.class, "front");
         back = hardwareMap.get(Servo.class, "back");
 
@@ -43,6 +46,9 @@ public class AlignThread implements Runnable{
         br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        front.scaleRange(.13, .85);
+        back.scaleRange(.48,1);
 
         front.setPosition(frontPoint);
         back.setPosition(backPoint);
@@ -68,25 +74,30 @@ public class AlignThread implements Runnable{
             }
             frontPoint += speed;
 
+            frontPoint = Range.clip(frontPoint, 0,1);
+
             front.setPosition(frontPoint);
         }else{
             if (pipeline.backPoleDetector.getDistance() > 10 || pipeline.backPoleDetector.getDistance() < -10){
                 speed = (pipeline.backPoleDetector.getDistance() / 120) * rate;
             }
             backPoint += speed;
+
+            backPoint = Range.clip(backPoint, 0, 1);
+
             back.setPosition(backPoint);
         }
     }
 
     public double getRobotDistance(boolean usingFrontCam){
-        return 382.3333333/pipeline.getMaxWidth(usingFrontCam);
+        return 666.1332771378968/pipeline.getMaxWidth(usingFrontCam);
     }
 
     public double getAngle(boolean usingFrontCam){
         if(usingFrontCam){
-            return front.getPosition() * 180;
+            return 180 - front.getPosition() * 180;
         }else{
-            return back.getPosition() * 180;
+            return 180 - back.getPosition() * 115;
         }
     }
 
@@ -94,8 +105,8 @@ public class AlignThread implements Runnable{
         double r = getRobotDistance(usingFrontCam);
         double angle = getAngle(usingFrontCam);
 
-        xDist = (r * Math.cos(angle)) - ROBOT_X - distance;
-        yDist = (r * Math.sin(angle)) - ROBOT_Y;
+        xDist = (r * Math.cos(Math.toRadians(angle))) - ROBOT_X;
+        yDist = (r * Math.sin(Math.toRadians(angle))) - ROBOT_Y - distance;
     }
 
     public double align(double camPos, double maxPower, boolean usingFrontCam){

@@ -147,7 +147,7 @@ public class FieldCentricDrive extends LinearOpMode {
             e.printStackTrace();
         }
 
-        double offset = Double.parseDouble(data) +90;
+        double  offset = Double.parseDouble(data) +90;
 
 
         // Initialize the hardware variables. Note that the strings used here as parameters

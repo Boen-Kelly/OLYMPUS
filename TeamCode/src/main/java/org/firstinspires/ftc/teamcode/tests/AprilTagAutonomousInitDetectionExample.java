@@ -29,8 +29,7 @@ import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera;
-import org.firstinspires.ftc.teamcode.classes.AprilTagDetectionPipeline;
+import org.firstinspires.ftc.teamcode.oldcode.tests.classes.AprilTagDetectionPipeline;
 
 import java.util.ArrayList;
 
