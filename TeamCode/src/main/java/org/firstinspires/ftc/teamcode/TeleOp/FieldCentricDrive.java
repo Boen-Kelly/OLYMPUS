@@ -407,11 +407,15 @@ public class FieldCentricDrive extends LinearOpMode {
             }
 
             if(gamepad1.right_bumper){
-                lilArm.setPosition(0.655);
-                lilArm2.setPosition(0.367);
+
+                lilArm2.setPosition(0.3725000000000471);
             }else{
-                lilArm.setPosition(-0.1);
                 lilArm2.setPosition(0.8);
+            }
+            if(gamepad1.left_bumper){
+                lilArm.setPosition(0.38269999999997856);
+            }else{
+                lilArm.setPosition(0.04700000000000047);
             }
             if(gamepad1.right_stick_button){
                 arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
