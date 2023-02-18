@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySe
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.LiftArm;
 import org.firstinspires.ftc.teamcode.classes.MLToolChain;
+import org.firstinspires.ftc.teamcode.classes.RoadRunnerThread;
 import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
 import org.openftc.apriltag.AprilTagDetection;
 
@@ -66,6 +67,9 @@ public class RightParkCone extends LinearOpMode {
 
         drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(-90)));
 
+        RoadRunnerThread RoadRunner = new RoadRunnerThread(hardwareMap, drive);
+        Thread RRThread = new Thread(RoadRunner);
+
         Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
                     lift.setSlurpPower(1);
@@ -101,6 +105,9 @@ public class RightParkCone extends LinearOpMode {
         waitForStart();
         timer.reset();
         liftThread.start();
+        RRThread.start();
+
+        RoadRunner.setTarVariables(traj, true);
 
         drive.followTrajectory(traj);
 //        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
@@ -290,5 +297,6 @@ public class RightParkCone extends LinearOpMode {
         }
 
         liftThread.interrupt();
+        RRThread.interrupt();
     }
 }
