@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.oldcode.tests.classes.AutoAlignPipeline;
+import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 
 import java.util.ArrayList;
 

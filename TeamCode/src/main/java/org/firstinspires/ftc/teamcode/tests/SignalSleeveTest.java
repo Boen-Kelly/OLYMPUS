@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.tests;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.oldcode.tests.classes.SignalSleeve;
+import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
 
 @TeleOp
 public class SignalSleeveTest extends LinearOpMode {

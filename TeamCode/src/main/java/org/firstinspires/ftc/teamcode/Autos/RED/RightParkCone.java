@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
-import org.firstinspires.ftc.teamcode.oldcode.tests.classes.AutoAlignPipeline;
-import org.firstinspires.ftc.teamcode.oldcode.tests.classes.LiftArm;
+import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
+import org.firstinspires.ftc.teamcode.classes.LiftArm;
 
 import java.io.File;
 import java.io.FileWriter;

@@ -1,11 +1,13 @@
 
-package org.firstinspires.ftc.teamcode.oldcode.tests.classes;
+package org.firstinspires.ftc.teamcode.classes;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -37,12 +39,14 @@ public class AutoAlignPipeline {
     OpenCvWebcam backCam;
     OpenCvWebcam frontCam;
     ExposureControl frontExposureControl, backExposureControl;
+    GainControl frontGainControl, backGainControl;
+    WhiteBalanceControl frontWBControl, backWBControl;
 
     String telemetry = "waiting for input";
     public static int threshVal = 128;
 
-    public static double LH = 90, LS = 170, LV = 160;
-    public static double UH = 120, US = 255, UV = 255;
+    public static double LH = 90, LS = 160, LV = 200;
+    public static double UH = 105, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
     public static double boxWidth = 20;
@@ -149,7 +153,7 @@ public class AutoAlignPipeline {
 
         Point top, bottom;
 
-        Mat kernel = new Mat(12,12, CvType.CV_8UC1);
+        Mat kernel = new Mat(6,6, CvType.CV_8UC1);
         double maxWidth = 0;
         double maxRotatedWidth = 0;
         double avg1, avg2;
@@ -830,6 +834,7 @@ public class AutoAlignPipeline {
      * "long" or it might have to do with AE priority, which I wasn't able to look into.
      * Here is the link to a FIRST article I found that might help.
      * https://ftc-docs.firstinspires.org/programming_resources/vision/webcam_controls/webcam-controls.html
+     * */
     public long setExposure(long exposure){
         frontExposureControl = frontCam.getExposureControl();
         backExposureControl = backCam.getExposureControl();
@@ -843,6 +848,48 @@ public class AutoAlignPipeline {
         return frontExposureControl.getExposure(TimeUnit.MILLISECONDS);
     }
 
+    public int setGain(int gain){
+        frontGainControl = frontCam.getGainControl();
+        backGainControl = backCam.getGainControl();
+
+        frontGainControl.setGain(gain);
+        backGainControl.setGain(gain);
+
+        return frontGainControl.getGain();
+    }
+
+    public int setWB(int WB){
+        frontWBControl = frontCam.getWhiteBalanceControl();
+        backWBControl = backCam.getWhiteBalanceControl();
+
+        frontWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+        backWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+
+        frontWBControl.setWhiteBalanceTemperature(WB);
+        backWBControl.setWhiteBalanceTemperature(WB);
+
+        return frontWBControl.getWhiteBalanceTemperature();
+    }
+
+    public boolean setAEPriority(boolean priority){
+        frontExposureControl.setAePriority(priority);
+        backExposureControl.setAePriority(priority);
+
+        return frontExposureControl.getAePriority();
+    }
+
+    public int getMaxWB() {
+        return frontWBControl.getMaxWhiteBalanceTemperature();
+    }
+
+    public int getMaxGain(boolean frontCam){
+        if(frontCam){
+            return frontGainControl.getMaxGain();
+        }else{
+            return backGainControl.getMaxGain();
+        }
+    }
+
     public double getMaxExposure(boolean frontCam){
         if(frontCam){
             return frontExposureControl.getMaxExposure(TimeUnit.MILLISECONDS);
@@ -850,5 +897,5 @@ public class AutoAlignPipeline {
             return backExposureControl.getMaxExposure(TimeUnit.MILLISECONDS);
         }
     }
-    */
+    //*/
 }

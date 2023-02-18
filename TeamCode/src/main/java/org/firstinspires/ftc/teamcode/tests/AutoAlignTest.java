@@ -1,44 +1,43 @@
 package org.firstinspires.ftc.teamcode.tests;
 
-import static com.google.blocks.ftcrobotcontroller.hardware.HardwareType.BNO055IMU;
-
-import androidx.arch.core.executor.TaskExecutor;
-
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.RoadRunner.util.BNO055IMUUtil;
-import org.firstinspires.ftc.teamcode.oldcode.tests.classes.AlignThread;
-import org.firstinspires.ftc.teamcode.oldcode.tests.classes.AutoAlignPipeline;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.classes.AlignThread;
+import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 
 @TeleOp
 //@Disabled
 @Config
 public class AutoAlignTest extends LinearOpMode {
     public static double cameraPoint = .75;
-    public static double exposure = 0;
+    public static double exposure = 25;
+    public static int gain = 1;
+    public static int WB = 5000;
+    public static boolean AEPriority = false;
 
-    BNO055IMU imu;
     public void runOpMode(){
 //        DcMotor bl, br, fl, fr;
         double distance;
 
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        Telemetry telemetry = dashboard.getTelemetry();
+
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
         parameters.angleUnit = com.qualcomm.hardware.bosch.BNO055IMU.AngleUnit.DEGREES;
-
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu.initialize(parameters);
 
         telemetry.addLine("pipeline");
         telemetry.update();
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
         telemetry.addLine("aligner");
         telemetry.update();
-        AlignThread aligner = new AlignThread(hardwareMap, pipeline);
+        AlignThread aligner = new AlignThread(hardwareMap, pipeline, parameters);
         telemetry.addLine("thread");
         telemetry.update();
         Thread alignerThread = new Thread(aligner);
@@ -73,7 +72,6 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.update();
         }
 
-        aligner.engageMaster(5, true);
         while (opModeIsActive()){
 
 //            fl.setPower(pipeline.align(cameraPoint, .1, false));
@@ -88,16 +86,24 @@ public class AutoAlignTest extends LinearOpMode {
 
 //            pipeline.aimCam();
 
+            if(gamepad1.a){
+                aligner.engageMaster(5,false, 0);
+            }else if(gamepad1.y){
+                aligner.disengageMaster();
+            }
 
             telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("distance", (int)(382.3333333 / pipeline.getMaxWidth(true)));
-            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
-            telemetry.addData("angle", aligner.getAngle(true));
+            telemetry.addData("calculated dist", aligner.getRobotDistance(false));
+            telemetry.addData("angle", aligner.getAngle(false));
             telemetry.addData("xDist", (int)aligner.xDist);
             telemetry.addData("yDist", (int)aligner.yDist);
-            telemetry.addData("gyro heading", imu.getAngularOrientation().firstAngle);
-//            telemetry.addData("current exposure", pipeline.setExposure((long)exposure));
-//            telemetry.addData("max exposure", pipeline.getMaxExposure(true));
+            telemetry.addData("aligned?", aligner.aligned());
+            telemetry.addData("gyro angle", aligner.gyroHeading());
+            telemetry.addData("gyro speed", aligner.gyroAlign(0));
+            telemetry.addData("xSpeed", aligner.xSpeed);
+            telemetry.addData("ySpeed", aligner.ySpeed);
+            telemetry.addData("backDist", aligner.backDist.getDistance(DistanceUnit.INCH));
+            telemetry.addData("frontDist", aligner.frontDist.getDistance(DistanceUnit.INCH));
             telemetry.update();
         }
         alignerThread.interrupt();
