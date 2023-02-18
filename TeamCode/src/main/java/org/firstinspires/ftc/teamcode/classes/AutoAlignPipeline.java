@@ -87,10 +87,6 @@ public class AutoAlignPipeline {
     // UNITS ARE METERS
     double tagsize = 0.166;
 
-    double exposure = 25;
-    int gain = 1;
-    int WB = 5000;
-
     ExposureControl frontExposureControl, backExposureControl;
     GainControl frontGainControl, backGainControl;
     WhiteBalanceControl frontWBControl, backWBControl;
@@ -169,8 +165,6 @@ public class AutoAlignPipeline {
                  */
             }
         });
-
-        setCamVals(exposure, gain, WB);
 
         telemetry = "waiting for start";
     }
