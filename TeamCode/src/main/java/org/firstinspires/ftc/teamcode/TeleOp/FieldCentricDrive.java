@@ -37,6 +37,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -49,6 +50,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+import org.firstinspires.ftc.teamcode.classes.IntakeThread;
+
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 
 import java.io.File;
@@ -80,7 +83,7 @@ public class FieldCentricDrive extends LinearOpMode {
     private DcMotor leftFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private DcMotor rightFrontDrive = null;
-    public static int armPos = 1350;
+    public static int armPos = 1410;
 
     RevBlinkinLedDriver leds;
 
@@ -94,7 +97,7 @@ public class FieldCentricDrive extends LinearOpMode {
 
         //RevBlinkinLedDriver blinkinLedDriver;
         //RevBlinkinLedDriver.BlinkinPattern pattern;
-
+        IntakeThread slurperThread = new IntakeThread(hardwareMap, gamepad1);
         //imu set up!
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
@@ -105,6 +108,8 @@ public class FieldCentricDrive extends LinearOpMode {
         DcMotor Lift2;
         DcMotor arm;
         CRServo Slurper;
+        Servo lilArm;
+        Servo lilArm2;
         TouchSensor Lift, armStop;
 
         double slowSpeed = .8;
@@ -114,9 +119,11 @@ public class FieldCentricDrive extends LinearOpMode {
         boolean toggle = true;
         boolean toggle2 = true;
         boolean toggle3 = true;
+        boolean toggle4 = true;
         boolean armUp = false;
         boolean parkingArm = false;
         boolean fullPwrDelivery = false;
+        boolean lilArmActivation = false;
 
         boolean isLiftUp = false;
         int robotPresetHeight = 1;
@@ -169,6 +176,8 @@ public class FieldCentricDrive extends LinearOpMode {
         Lift1 = hardwareMap.get(DcMotor.class, "Lift1");
         Lift2 = hardwareMap.get(DcMotor.class, "Lift2");
         Slurper = hardwareMap.get(CRServo.class, "Slurper");
+        lilArm = hardwareMap.get(Servo.class, "lilArm1");
+        lilArm2 = hardwareMap.get(Servo.class, "lilArm2");
 
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
@@ -196,6 +205,7 @@ public class FieldCentricDrive extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        slurperThread.start();
 
         arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 //        Lift1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -228,7 +238,7 @@ public class FieldCentricDrive extends LinearOpMode {
             leftBackDrive.setPower(v3 * slowSpeed);
             rightBackDrive.setPower(v4 * slowSpeed);
 
-            if(isLiftUp && fullPwrDelivery == false){
+            if(gamepad1.left_trigger > 0.1f){
                 slowSpeed = .75 ;
                 telemetry.addData("Slow", slowSpeed);
             }else{
@@ -236,14 +246,9 @@ public class FieldCentricDrive extends LinearOpMode {
                 telemetry.addData("Fast", slowSpeed);
             }
 
-            if(gamepad1.a){
-                Slurper.setPower(-1);
-            }else if(gamepad1.y){
+            if(gamepad1.y){
                 savedTime = runtime.seconds();
-                Slurper.setPower(1);
                 fullPwrDelivery = true;
-            }else if(gamepad1.b){
-                Slurper.setPower(0);
             }
 
             if(armUp && isLiftUp){
@@ -402,6 +407,18 @@ public class FieldCentricDrive extends LinearOpMode {
             }else{
                 toggle = true;
             }
+
+            if(gamepad1.right_bumper){
+
+                lilArm2.setPosition(0.3725000000000471);
+            }else{
+                lilArm2.setPosition(0.8);
+            }
+            if(gamepad1.left_bumper){
+                lilArm.setPosition(0.38269999999997856);
+            }else{
+                lilArm.setPosition(0.04700000000000047);
+            }
             if(gamepad1.right_stick_button){
                 arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
@@ -454,8 +471,12 @@ public class FieldCentricDrive extends LinearOpMode {
             telemetry.addData("armPos", arm.getCurrentPosition());
             telemetry.addData("height", height);
             telemetry.addData("heading", heading);
+            telemetry.addData("Servo", lilArm.getPosition());
+            telemetry.addData("Servo 2", lilArm2.getPosition());
+            telemetry.addData("Servo Power", Slurper.getPower());
             telemetry.update();
         }
+        slurperThread.interrupt();
     }
     public void lightTimer(double runtime, RevBlinkinLedDriver Blinker){
         double secLightSwitch = 0;
