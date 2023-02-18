@@ -10,6 +10,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.checkerframework.checker.units.qual.A;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -34,6 +37,7 @@ import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Config
 public class AutoAlignPipeline {
@@ -43,8 +47,8 @@ public class AutoAlignPipeline {
     String telemetry = "waiting for input";
     public static int threshVal = 128;
 
-    public static double LH = 90, LS = 170, LV = 160;
-    public static double UH = 120, US = 255, UV = 255;
+    public static double LH = 90, LS = 160, LV = 200;
+    public static double UH = 105, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
     public static double boxWidth = 20;
@@ -83,6 +87,13 @@ public class AutoAlignPipeline {
     // UNITS ARE METERS
     double tagsize = 0.166;
 
+    double exposure = 25;
+    int gain = 1;
+    int WB = 5000;
+
+    ExposureControl frontExposureControl, backExposureControl;
+    GainControl frontGainControl, backGainControl;
+    WhiteBalanceControl frontWBControl, backWBControl;
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
 
@@ -158,6 +169,8 @@ public class AutoAlignPipeline {
                  */
             }
         });
+
+        setCamVals(exposure, gain, WB);
 
         telemetry = "waiting for start";
     }
@@ -816,6 +829,36 @@ public class AutoAlignPipeline {
 
     public String toString(){
         return telemetry;
+    }
+
+    public String setCamVals(double exposure, int gain, int WB){
+        frontExposureControl = frontCam.getExposureControl();
+        backExposureControl = backCam.getExposureControl();
+
+        frontGainControl = frontCam.getGainControl();
+        backGainControl = backCam.getGainControl();
+
+        frontWBControl = frontCam.getWhiteBalanceControl();
+        backWBControl = backCam.getWhiteBalanceControl();
+
+        frontExposureControl.setAePriority(false);
+        backExposureControl.setAePriority(false);
+
+        frontExposureControl.setMode(ExposureControl.Mode.Manual);
+        backExposureControl.setMode(ExposureControl.Mode.Manual);
+        frontWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+        backWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+
+        frontExposureControl.setExposure((long)exposure, TimeUnit.MILLISECONDS);
+        backExposureControl.setExposure((long)exposure, TimeUnit.MILLISECONDS);
+
+        frontGainControl.setGain(gain);
+        backGainControl.setGain(gain);
+
+        frontWBControl.setWhiteBalanceTemperature(WB);
+        backWBControl.setWhiteBalanceTemperature(WB);
+
+        return "exposure: " + frontExposureControl.getExposure(TimeUnit.MILLISECONDS) + "\ngain: " + frontGainControl.getGain() + "\nWB: " + frontWBControl.getWhiteBalanceTemperature();
     }
 
     public void aimCam (boolean isFrontCam) {

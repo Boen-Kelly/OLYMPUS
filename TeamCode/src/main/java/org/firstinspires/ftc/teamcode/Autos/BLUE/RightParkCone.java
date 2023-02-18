@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -55,9 +56,13 @@ public class RightParkCone extends LinearOpMode {
         pipeline.frontPoleDetector.setColors(false, false, true);
 
         DistanceSensor backDist, frontDist;
+        Servo lilArmL, lilArmR;
 
         backDist = hardwareMap.get(DistanceSensor.class, "backDist");
         frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
+        lilArmL = hardwareMap.get(Servo.class, "lilArm1");
+        lilArmR = hardwareMap.get(Servo.class, "lilArm2");
+
 
         LiftArm lift = new LiftArm(hardwareMap);
         Thread liftThread = new Thread(lift);
