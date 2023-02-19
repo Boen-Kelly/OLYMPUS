@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Autos.BLUE;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
@@ -22,15 +23,18 @@ import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
 import org.openftc.apriltag.AprilTagDetection;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 //-2.91
 //-31.04
 //3.65
 @Autonomous(name = "BLUE AUTO")
+@Config
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
@@ -41,7 +45,13 @@ public class RightParkCone extends LinearOpMode {
         int middle = 7;
         int right = 8;
 
+        double exposure = 25;
+        int gain = 1;
+        int WB = 5000;
+
         double distanceToPole = 0, distanceToCone = 0;
+
+        boolean toggle1 = false;
 
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
@@ -66,6 +76,30 @@ public class RightParkCone extends LinearOpMode {
 
         LiftArm lift = new LiftArm(hardwareMap);
         Thread liftThread = new Thread(lift);
+
+        String[] camData = new String[3];
+        int c = 0;
+
+        try {
+            File obj = new File("/sdcard/FIRST/camVals.txt");
+            Scanner scan = new Scanner(obj);
+
+            while (scan.hasNextLine()){
+                telemetry.addLine("Reading...");
+                telemetry.update();
+                camData[c] = scan.nextLine();
+                c ++;
+            }
+            scan.close();
+        }catch (FileNotFoundException e){
+            telemetry.addLine("couldn't read");
+            telemetry.update();
+            e.printStackTrace();
+        }
+
+        exposure = Double.parseDouble(camData[0]);
+        gain = Integer.parseInt(camData[1]);
+        WB = Integer.parseInt(camData[2]);
 
         lilArmL.setPosition(.047);
         lilArmR.setPosition(.8);
@@ -111,18 +145,58 @@ public class RightParkCone extends LinearOpMode {
         while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
                 pipeline.setPipelines("pole", "pole");
+                pipeline.pointCam(true, .4);
             }else if(gamepad1.b){
                 pipeline.setPipelines("sleeve", "sleeve");
+                pipeline.pointCam(true, .6);
             }else if(gamepad1.y){
                 pipeline.setPipelines("sleeve", "pole");
+                pipeline.pointCam(true, .6);
             }
 
-            pipeline.setCamVals(25,1,5000);
+            if(gamepad1.right_bumper){
+                if(toggle1){
+                    exposure += 10;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.left_bumper){
+                if(toggle1){
+                    exposure -= 10;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_up){
+                if(toggle1){
+                    gain += 1;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_down){
+                if(toggle1){
+                    gain -= 1;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_right){
+                if(toggle1){
+                    WB += 500;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_left){
+                if(toggle1) {
+                    WB -= 500;
+                    toggle1 = false;
+                }
+            }else{
+                toggle1 = true;
+            }
+
+            pipeline.setCamVals(exposure,gain,WB);
 
 
             AprilTagID = pipeline.AprilTagID(true);
 
             telemetry.addData("Sleeve position", AprilTagID);
+            telemetry.addData("exposure", exposure);
+            telemetry.addData("gain", gain);
+            telemetry.addData("WB", WB);
             telemetry.addLine("waiting for start");
             telemetry.update();
         }
@@ -139,7 +213,7 @@ public class RightParkCone extends LinearOpMode {
 
         drive.followTrajectory(goToPole);
 
-        pipeline.turnToAlign(.77, false);
+        pipeline.turnToAlign(.74, false);
 
         distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
@@ -157,7 +231,9 @@ public class RightParkCone extends LinearOpMode {
                     lift.lift(1800,false);
                 })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getHeading()))
-                .back(distanceToPole - 3)
+                .back(distanceToPole - 4,
+                        SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -203,14 +279,14 @@ public class RightParkCone extends LinearOpMode {
 
 //            telemetry.addData("dist", distanceToCone);
 //            telemetry.update();
-//            drive.update();
+            drive.update();
 
             Trajectory collect = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(0, () -> {
                         lift.lift(1000, true);
                         lift.setSlurpPower(1);
                     })
-                    .forward(distanceToCone-3)
+                    .forward(distanceToCone-1)
                     .build();
 
             drive.followTrajectory(collect);
@@ -239,7 +315,7 @@ public class RightParkCone extends LinearOpMode {
             telemetry.addLine("aligning");
             telemetry.update();
 
-            pipeline.turnToAlign(.77, false);
+            pipeline.turnToAlign(.74, false);
 //            sleep(500);
             distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
@@ -294,7 +370,7 @@ public class RightParkCone extends LinearOpMode {
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
                     .splineTo(new Vector2d(-34,10), Math.toRadians(0))
-                    .splineToConstantHeading(new Vector2d(-48, 12), Math.toRadians(0))
+//                    .splineToConstantHeading(new Vector2d(-48, 12), Math.toRadians(0))
                     .splineToConstantHeading(new Vector2d(-60,12), Math.toRadians(0))
                     .build();
 
@@ -305,9 +381,17 @@ public class RightParkCone extends LinearOpMode {
 
         try {
             File test = new File("/sdcard/FIRST/nums.txt");
+            File camVals = new File("/sdcard/FIRST/camVals.txt");
+
             FileWriter writer = new FileWriter("/sdcard/FIRST/nums.txt");
+            FileWriter camValWriter = new FileWriter("/sdcard/FIRST/camVals.txt");
+
             writer.write(Math.toDegrees(drive.getPoseEstimate().getHeading()) + "");
+            camValWriter.write(exposure + "\n" + gain + "\n" + WB);
+
             writer.close();
+            camValWriter.close();
+
             telemetry.addLine("successfully wrote!");
             telemetry.update();
         } catch (IOException e) {
@@ -316,10 +400,10 @@ public class RightParkCone extends LinearOpMode {
             e.printStackTrace();
         }
 
-        while(opModeIsActive()){
-            telemetry.addData("time", time);
-            telemetry.update();
-        }
+//        while(opModeIsActive()){
+//            telemetry.addData("time", time);
+//            telemetry.update();
+//        }
 
         liftThread.interrupt();
     }
