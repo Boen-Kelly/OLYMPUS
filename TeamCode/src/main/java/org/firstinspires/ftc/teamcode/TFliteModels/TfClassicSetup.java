@@ -32,13 +32,18 @@ package org.firstinspires.ftc.teamcode.TFliteModels;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.apache.commons.math3.analysis.function.Exp;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This 2022-2023 OpMode illustrates the basics of using the TensorFlow Object Detection API to
@@ -62,11 +67,17 @@ public class TfClassicSetup extends LinearOpMode {
      * Here we assume it's an Asset.    Also see method initTfod() below .
      */
     //private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
-    private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/MLBoltTest.tflite";
+    private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/mlModel.tflite";
+
+    ExposureControl exposureControl;
+    GainControl gainControl;
+    WhiteBalanceControl WBControl;
 
 
     private static final String[] LABELS = {
-            "B"
+            "b",
+            "h",
+            "s"
     };
 
     /*
@@ -165,6 +176,7 @@ public class TfClassicSetup extends LinearOpMode {
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
+
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
     }
@@ -185,5 +197,20 @@ public class TfClassicSetup extends LinearOpMode {
         // Use loadModelFromFile() if you have downloaded a custom team model to the Robot Controller's FLASH.
         //tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
         tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
+    }
+
+    public void setCameraAttributes(double exposure, int gain, int WB){
+        exposureControl = vuforia.getCamera().getControl(ExposureControl.class);
+        gainControl = vuforia.getCamera().getControl(GainControl.class);
+        WBControl = vuforia.getCamera().getControl(WhiteBalanceControl.class);
+
+        exposureControl.setMode(ExposureControl.Mode.Manual);
+        exposureControl.setAePriority(false);
+
+        WBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+
+        exposureControl.setExposure((long)exposure, TimeUnit.MILLISECONDS);
+        gainControl.setGain(gain);
+        WBControl.setWhiteBalanceTemperature(WB);
     }
 }

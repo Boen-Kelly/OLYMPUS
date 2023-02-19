@@ -220,12 +220,12 @@ public class FieldCentricDrive extends LinearOpMode {
 
             angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
-            double heading = angles.firstAngle + offset;
+            double heading = -angles.firstAngle + offset;
 
             telemetry.addData("heading", heading);
 
-            double r = Math.hypot(gamepad1.left_stick_x, -gamepad1.left_stick_y);
-            double robotAngle = Math.atan2(-gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
+            double r = Math.hypot(-gamepad1.left_stick_x, -gamepad1.left_stick_y);
+            double robotAngle = Math.atan2(-gamepad1.left_stick_y, -gamepad1.left_stick_x) - Math.PI / 4;
             double rightX = gamepad1.right_stick_x;
             double radientsHeding = heading * Math.PI/180;
             final double v1 = r * Math.cos(robotAngle - radientsHeding) + rightX;
@@ -409,6 +409,9 @@ public class FieldCentricDrive extends LinearOpMode {
             }else{
                 lilArm.setPosition(0.04700000000000047);
             }
+
+//            lilArm.setPosition(.047 + gamepad1.left_trigger);
+
             if(gamepad1.right_stick_button){
                 arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
