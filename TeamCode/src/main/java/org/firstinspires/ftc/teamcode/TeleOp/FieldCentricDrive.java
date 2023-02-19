@@ -37,6 +37,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -49,6 +50,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+import org.firstinspires.ftc.teamcode.classes.IntakeThread;
+
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 
 import java.io.File;
@@ -80,7 +83,7 @@ public class FieldCentricDrive extends LinearOpMode {
     private DcMotor leftFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private DcMotor rightFrontDrive = null;
-    public static int armPos = 1350;
+    public static int armPos = 1310;
 
     RevBlinkinLedDriver leds;
 
@@ -94,7 +97,7 @@ public class FieldCentricDrive extends LinearOpMode {
 
         //RevBlinkinLedDriver blinkinLedDriver;
         //RevBlinkinLedDriver.BlinkinPattern pattern;
-
+        IntakeThread slurperThread = new IntakeThread(hardwareMap, gamepad1);
         //imu set up!
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
@@ -105,6 +108,8 @@ public class FieldCentricDrive extends LinearOpMode {
         DcMotor Lift2;
         DcMotor arm;
         CRServo Slurper;
+        Servo lilArm;
+        Servo lilArm2;
         TouchSensor Lift, armStop;
 
         double slowSpeed = .8;
@@ -114,9 +119,11 @@ public class FieldCentricDrive extends LinearOpMode {
         boolean toggle = true;
         boolean toggle2 = true;
         boolean toggle3 = true;
+        boolean toggle4 = true;
         boolean armUp = false;
         boolean parkingArm = false;
         boolean fullPwrDelivery = false;
+        boolean lilArmActivation = false;
 
         boolean isLiftUp = false;
         int robotPresetHeight = 1;
@@ -169,6 +176,8 @@ public class FieldCentricDrive extends LinearOpMode {
         Lift1 = hardwareMap.get(DcMotor.class, "Lift1");
         Lift2 = hardwareMap.get(DcMotor.class, "Lift2");
         Slurper = hardwareMap.get(CRServo.class, "Slurper");
+        lilArm = hardwareMap.get(Servo.class, "lilArm1");
+        lilArm2 = hardwareMap.get(Servo.class, "lilArm2");
 
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
@@ -196,6 +205,7 @@ public class FieldCentricDrive extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        slurperThread.start();
 
         arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 //        Lift1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -228,7 +238,7 @@ public class FieldCentricDrive extends LinearOpMode {
             leftBackDrive.setPower(v3 * slowSpeed);
             rightBackDrive.setPower(v4 * slowSpeed);
 
-            if(isLiftUp && fullPwrDelivery == false){
+            if(gamepad1.left_trigger > 0.1f){
                 slowSpeed = .75 ;
                 telemetry.addData("Slow", slowSpeed);
             }else{
@@ -236,14 +246,9 @@ public class FieldCentricDrive extends LinearOpMode {
                 telemetry.addData("Fast", slowSpeed);
             }
 
-            if(gamepad1.a){
-                Slurper.setPower(-1);
-            }else if(gamepad1.y){
+            if(gamepad1.y){
                 savedTime = runtime.seconds();
-                Slurper.setPower(1);
                 fullPwrDelivery = true;
-            }else if(gamepad1.b){
-                Slurper.setPower(0);
             }
 
             if(armUp && isLiftUp){
@@ -266,93 +271,83 @@ public class FieldCentricDrive extends LinearOpMode {
                 bottom = Lift1.getCurrentPosition();
             }
 
-            bottomAdjust += .001 * gamepad2.right_stick_y;
+            bottomAdjust += 1 * gamepad2.right_stick_y;
 
             if(gamepad2.right_trigger > 0 && gamepad2.left_trigger > 0 && gamepad2.y) {
                 height = 950;
-                fineTune = 0;
                 armUp = false;
                 parkingArm = true;
-                bottom = 0 + (int)bottomAdjust;
+                bottom = 0;
                 leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE);
             }
             else if(gamepad2.right_trigger > 0 && gamepad2.y){
-                height = 1700;
-                fineTune = 0;
+                height = 2000;
                 armUp = true;
                 parkingArm = false;
-                bottom = 0 + (int)bottomAdjust;
+                bottom = 0;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.HOT_PINK);
                 }
             }else if(gamepad2.right_trigger > 0 && gamepad2.b){
                 height = 200;
-                fineTune = 0;
                 armUp = true;
                 parkingArm = false;
-                bottom = 0 + (int)bottomAdjust;
+                bottom = 0;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
                 }
             }else if(gamepad2.right_trigger > 0 && gamepad2.x){
                 height = 950;
-                fineTune = 0;
                 armUp = true;
                 parkingArm = false;
-                bottom = 0 + (int)bottomAdjust;
+                bottom = 0;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
                 }
             }else if(gamepad2.right_trigger > 0 && gamepad2.a){
-                height = 500;
-                fineTune = 0;
+                height = 600;
                 armUp = false;
                 parkingArm = false;
-                bottom = 0 + (int)bottomAdjust;
+                bottom = 0;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
                 }
             }else if(gamepad2.left_trigger > 0 && gamepad2.y){
                 height = 950;
-                fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 500 + (int)bottomAdjust;
+                bottom = 500;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
             }else if(gamepad2.left_trigger > 0 && gamepad2.x){
                 height = 950;
-                fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 450 + (int)bottomAdjust;
+                bottom = 450;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
             }else if(gamepad2.left_trigger > 0 && gamepad2.b){
                 height = 950;
-                fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 350 + (int)bottomAdjust;
+                bottom = 350;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
             }else if(gamepad2.left_trigger > 0 && gamepad2.a){
                 height = 950;
-                fineTune = 0;
                 armUp = false;
                 parkingArm = false;
-                bottom = 250 + (int)bottomAdjust;
+                bottom = 250;
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
                 }
             }else if(savedTime+0.5 < runtime.seconds() && savedTime != 0){
                 height = 500;
-                fineTune = 0;
                 armUp = false;
-                bottom = 0 + (int)bottomAdjust;
+                bottom = 0;
                 Slurper.setPower(-1);
                 savedTime = 0;
                 if(runtime.seconds() < 115) {
@@ -362,15 +357,15 @@ public class FieldCentricDrive extends LinearOpMode {
 
 
             if(gamepad2.dpad_up){
-                fineTune = fineTune + 2;
+                fineTune = fineTune + 5;
             }else if(gamepad2.dpad_down) {
-                fineTune = fineTune - 2;
+                fineTune = fineTune - 5;
             }
 
 
             if(gamepad2.right_bumper){
                 if(toggle2){
-                    armFineTune -= 60;
+                    fineTune -= 200;
                     toggle2 = false;
                 }
             }else{
@@ -378,7 +373,7 @@ public class FieldCentricDrive extends LinearOpMode {
             }
             if(gamepad2.left_bumper){
                 if(toggle3){
-                    armFineTune += 60;
+                    fineTune += 200;
                     toggle3 = false;
                 }
             }else{
@@ -402,11 +397,26 @@ public class FieldCentricDrive extends LinearOpMode {
             }else{
                 toggle = true;
             }
+
+            if(gamepad1.right_bumper){
+
+                lilArm2.setPosition(0.3225000000000471);
+            }else{
+                lilArm2.setPosition(0.8);
+            }
+            if(gamepad1.left_bumper){
+                lilArm.setPosition(0.473);
+            }else{
+                lilArm.setPosition(0.04700000000000047);
+            }
+
+//            lilArm.setPosition(.047 + gamepad1.left_trigger);
+
             if(gamepad1.right_stick_button){
                 arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
 
-            if(isLiftUp && (arm.getCurrentPosition() < -300 || !armUp) || parkingArm){
+            if(isLiftUp && (arm.getCurrentPosition() < -115 || !armUp) || parkingArm){
                 Lift1.setTargetPosition(height + fineTune);
                 Lift2.setTargetPosition(Lift1.getTargetPosition());
                 Lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -414,7 +424,7 @@ public class FieldCentricDrive extends LinearOpMode {
                 Lift1.setPower(1);
                 Lift2.setPower(Lift1.getPower());
             }else{
-                Lift1.setTargetPosition(bottom);
+                Lift1.setTargetPosition(bottom + (int)bottomAdjust);
                 Lift2.setTargetPosition(Lift1.getTargetPosition());
                 Lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 Lift2.setMode(Lift1.getMode());
@@ -454,8 +464,14 @@ public class FieldCentricDrive extends LinearOpMode {
             telemetry.addData("armPos", arm.getCurrentPosition());
             telemetry.addData("height", height);
             telemetry.addData("heading", heading);
+            telemetry.addData("Servo", lilArm.getPosition());
+            telemetry.addData("Servo 2", lilArm2.getPosition());
+            telemetry.addData("Servo Power", Slurper.getPower());
+            telemetry.addData("bottomAdjust", bottomAdjust);
+            telemetry.addData("lift1 target", Lift1.getTargetPosition());
             telemetry.update();
         }
+        slurperThread.interrupt();
     }
     public void lightTimer(double runtime, RevBlinkinLedDriver Blinker){
         double secLightSwitch = 0;
