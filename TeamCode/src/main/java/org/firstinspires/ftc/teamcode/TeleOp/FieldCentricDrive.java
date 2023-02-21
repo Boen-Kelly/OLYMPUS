@@ -83,7 +83,7 @@ public class FieldCentricDrive extends LinearOpMode {
     private DcMotor leftFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private DcMotor rightFrontDrive = null;
-    public static int armPos = 1310;
+    public static int armPos = 1410;
 
     RevBlinkinLedDriver leds;
 
@@ -224,8 +224,27 @@ public class FieldCentricDrive extends LinearOpMode {
 
             telemetry.addData("heading", heading);
 
-            double r = Math.hypot(-gamepad1.left_stick_x, -gamepad1.left_stick_y);
-            double robotAngle = Math.atan2(-gamepad1.left_stick_y, -gamepad1.left_stick_x) - Math.PI / 4;
+            float driveX = 0;
+            float driveY = 0;
+            if(gamepad1.dpad_down || gamepad1.dpad_left || gamepad1.dpad_right || gamepad1.dpad_up){
+                if(gamepad1.dpad_down){
+                    driveY = 1;
+                }else if(gamepad1.dpad_up){
+                    driveY = -1;
+                }if(gamepad1.dpad_left){
+                    driveX = -1;
+                }else if (gamepad1.dpad_right){
+                    driveX = 1;
+                }
+            }else if(Math.abs(gamepad1.left_stick_x) > 0.05 || Math.abs(gamepad1.left_stick_y) > 0.05){
+                driveX = gamepad1.left_stick_x;
+                driveY = gamepad1.left_stick_y;
+            }else{
+                driveX = 0;
+                driveY = 0;
+            }
+            double r = Math.hypot(-driveX, -driveY);
+            double robotAngle = Math.atan2(-driveY, -driveX) - Math.PI / 4;
             double rightX = gamepad1.right_stick_x;
             double radientsHeding = heading * Math.PI/180;
             final double v1 = r * Math.cos(robotAngle - radientsHeding) + rightX;
@@ -417,7 +436,11 @@ public class FieldCentricDrive extends LinearOpMode {
             }
 
             if(isLiftUp && (arm.getCurrentPosition() < -115 || !armUp) || parkingArm){
-                Lift1.setTargetPosition(height + fineTune);
+                if(armUp) {
+                    Lift1.setTargetPosition(height + fineTune);
+                }else{
+                    Lift1.setTargetPosition(height);
+                }
                 Lift2.setTargetPosition(Lift1.getTargetPosition());
                 Lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 Lift2.setMode(Lift1.getMode());
