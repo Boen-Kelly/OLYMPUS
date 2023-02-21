@@ -896,10 +896,10 @@ public class AutoAlignPipeline {
     public void turnToAlign(double camPos, boolean usingFrontCam) {
         time.reset();
         while (time.milliseconds() < 3000 && (time.milliseconds() - startTime) < 500) {
-            fl.setPower(align(camPos, .07, usingFrontCam));
-            br.setPower(-align(camPos, .07, usingFrontCam));
-            bl.setPower(align(camPos, .07, usingFrontCam));
-            fr.setPower(-align(camPos, .07 , usingFrontCam));
+            fl.setPower(align(camPos, .1, usingFrontCam));
+            br.setPower(-align(camPos, .1, usingFrontCam));
+            bl.setPower(align(camPos, .1, usingFrontCam));
+            fr.setPower(-align(camPos, .1 , usingFrontCam));
 
             if(!aligned(usingFrontCam)){
                 startTime = time.milliseconds();

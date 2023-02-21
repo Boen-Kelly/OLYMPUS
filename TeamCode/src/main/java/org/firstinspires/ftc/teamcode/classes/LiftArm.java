@@ -52,7 +52,7 @@ public class LiftArm implements Runnable{
             }
 
             if(!intake && isLiftUp){
-                arm.setTargetPosition(-1250);
+                arm.setTargetPosition(-1310);
             }else{
                 arm.setTargetPosition(0);
             }

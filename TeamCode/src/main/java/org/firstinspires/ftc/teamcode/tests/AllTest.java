@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -40,7 +41,10 @@ public class AllTest extends LinearOpMode {
         backCam = hardwareMap.get(Servo.class, "back");
 
         leds = hardwareMap.get(RevBlinkinLedDriver.class, "led");
-        
+
+        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+
         telemetry.addLine("waiting for start");
         telemetry.update();
         
@@ -82,21 +86,14 @@ public class AllTest extends LinearOpMode {
 
             leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_PARTY_PALETTE);
 
-            if(gamepad1.dpad_up){
-                bl.setPower(1);
-            }
+            double straight = gamepad1.left_stick_y;
+            double strafe = gamepad1.left_stick_x;
+            double rotation = gamepad1.right_stick_x;
 
-            if(gamepad1.dpad_down){
-                br.setPower(1);
-            }
-
-            if(gamepad1.dpad_right){
-                fl.setPower(1);
-            }
-
-            if(gamepad1.dpad_left){
-                fr.setPower(1);
-            }
+            bl.setPower(straight - strafe + rotation);
+            fl.setPower(straight + strafe + rotation);
+            br.setPower(straight + strafe - rotation);
+            fr.setPower(straight - strafe - rotation);
 
             telemetry.addData("bl", bl.getCurrentPosition());
             telemetry.addData("br", br.getCurrentPosition());
