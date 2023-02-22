@@ -192,7 +192,6 @@ public class RightParkCone extends LinearOpMode {
 
             pipeline.setCamVals(exposure,gain,WB);
 
-
             AprilTagID = pipeline.AprilTagID(true);
 
 
@@ -217,12 +216,14 @@ public class RightParkCone extends LinearOpMode {
 
         TrajectorySequence goToPole = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                 .lineToLinearHeading(new Pose2d(-34, 7.5, Math.toRadians(-90)))
-                .lineToLinearHeading(new Pose2d(-34, 12, Math.toRadians(-220)))
+                .lineToLinearHeading(new Pose2d(-34, 12, Math.toRadians(-220)),
+                        SampleMecanumDrive.getVelocityConstraint(DriveConstants.MAX_VEL, Math.toRadians(360), DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                 .build();
 
         drive.followTrajectorySequence(goToPole);
 
-        lift.lift(1950, false);
+        lift.lift(1850, false);
 
         pipeline.turnToAlign(.76, false);
 
@@ -303,12 +304,12 @@ public class RightParkCone extends LinearOpMode {
             sleep(500);
             lift.lift();
 
-            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
+            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
                         lift.drop(500);
                     })
-                    .lineToSplineHeading(new Pose2d(-40,12, Math.toRadians(180)))
-                    .splineTo(new Vector2d(-36,12), Math.toRadians(-40))
+                    .lineToLinearHeading(new Pose2d(-40,12, Math.toRadians(180)))
+                    .splineToLinearHeading(new Pose2d(-36,10, Math.toRadians(-220)), Math.toRadians(-220))
                     .build();
 //            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
 //                    .addTemporalMarker(.5, () -> {
@@ -318,7 +319,7 @@ public class RightParkCone extends LinearOpMode {
 //                    .turn(Math.toRadians(-45))
 //                    .build();
 
-            drive.followTrajectory(deliver);
+            drive.followTrajectorySequence(deliver);
 
 
             telemetry.addLine("aligning");

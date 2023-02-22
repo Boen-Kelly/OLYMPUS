@@ -434,10 +434,6 @@ public class FieldCentricDrive extends LinearOpMode {
             if(isLiftUp && (arm.getCurrentPosition() < -115 || !armUp) || parkingArm){
                 if(armUp) {
                     Lift1.setTargetPosition(height + fineTune);
-                    Lift1.isOverCurrent();
-                    Lift1.getCurrent(CurrentUnit.AMPS);
-                    Lift1.setCurrentAlert(1,CurrentUnit.AMPS);
-                    Lift1.getCurrentAlert(CurrentUnit.AMPS);
                 }else{
                     Lift1.setTargetPosition(height);
                 }
