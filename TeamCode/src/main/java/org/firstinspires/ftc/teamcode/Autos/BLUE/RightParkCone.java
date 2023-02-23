@@ -132,12 +132,16 @@ public class RightParkCone extends LinearOpMode {
         Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
                     lift.setSlurpPower(1);
-                    lift.lift(0, false);
                     pipeline.setPipelines("pole", "pole");
                 })
-                .lineToConstantHeading(new Vector2d(-32, 64.75))
-                .splineToConstantHeading(new Vector2d(-34, 62.75), Math.toRadians(-90))
-                .lineToLinearHeading(new Pose2d(-34, 3, Math.toRadians(-90)))
+                .splineToConstantHeading(new Vector2d(-14, 59.75), Math.toRadians(-90))
+                .splineToConstantHeading(new Vector2d(-12, 57.75), Math.toRadians(-90))
+                .lineTo(new Vector2d(-12, 16),
+                        SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(15))
+                .splineTo(new Vector2d(-14,14), Math.toRadians(180))
+                .lineToLinearHeading(new Pose2d(-24,14, Math.toRadians(-180)))
+                .lineToSplineHeading(new Pose2d(-36,14, Math.toRadians(-220)))
                 .build();
 
         while(!isStarted() && !isStopRequested()) {
@@ -214,18 +218,9 @@ public class RightParkCone extends LinearOpMode {
 
         drive.followTrajectory(traj);
 
-        TrajectorySequence goToPole = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .lineToLinearHeading(new Pose2d(-34, 7.5, Math.toRadians(-90)))
-                .lineToLinearHeading(new Pose2d(-34, 12, Math.toRadians(-220)),
-                        SampleMecanumDrive.getVelocityConstraint(DriveConstants.MAX_VEL, Math.toRadians(360), DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
-                .build();
-
-        drive.followTrajectorySequence(goToPole);
-
         lift.lift(1850, false);
 
-        pipeline.turnToAlign(.76, false);
+        pipeline.turnToAlign(.77, false);
 
         distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
@@ -272,12 +267,12 @@ public class RightParkCone extends LinearOpMode {
                         lift.setSlurpPower(0);
                     })
                     .forward(distanceToPole - 4)
-                    .splineTo(new Vector2d(-40, 12), Math.toRadians(180))
+                    .splineTo(new Vector2d(-40, 14), Math.toRadians(180))
                     .build();
 
             drive.followTrajectory(pickupcone);
 
-            pipeline.turnToAlign(.53, true);
+            pipeline.turnToAlign(.525, true);
 
 //            sleep(500);
             distanceToCone = frontDist.getDistance(DistanceUnit.INCH);
@@ -295,7 +290,7 @@ public class RightParkCone extends LinearOpMode {
                         lift.lift(1000, true);
                         lift.setSlurpPower(1);
                     })
-                    .forward(distanceToCone-4)
+                    .forward(distanceToCone-2)
                     .build();
 
             drive.followTrajectory(collect);
@@ -304,12 +299,11 @@ public class RightParkCone extends LinearOpMode {
             sleep(500);
             lift.lift();
 
-            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+            Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
                         lift.drop(500);
                     })
-                    .lineToLinearHeading(new Pose2d(-40,12, Math.toRadians(180)))
-                    .splineToLinearHeading(new Pose2d(-36,10, Math.toRadians(-220)), Math.toRadians(-220))
+                    .lineToLinearHeading(new Pose2d(-36,14, Math.toRadians(135)))
                     .build();
 //            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
 //                    .addTemporalMarker(.5, () -> {
@@ -319,13 +313,13 @@ public class RightParkCone extends LinearOpMode {
 //                    .turn(Math.toRadians(-45))
 //                    .build();
 
-            drive.followTrajectorySequence(deliver);
+            drive.followTrajectory(deliver);
 
 
             telemetry.addLine("aligning");
             telemetry.update();
 
-            pipeline.turnToAlign(.76, false);
+            pipeline.turnToAlign(.77, false);
 //            sleep(500);
             distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
@@ -337,7 +331,7 @@ public class RightParkCone extends LinearOpMode {
 
             Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(0, () -> {
-                        lift.lift(1950, false);
+                        lift.lift(1850, false);
                     })
                     .back(distanceToPole-2,
                             SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
@@ -356,7 +350,9 @@ public class RightParkCone extends LinearOpMode {
                         lift.drop();
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                    .splineTo(new Vector2d(-36, 12), Math.toRadians(0))
+                    .splineTo(new Vector2d(-36, 12), Math.toRadians(0),
+                            SampleMecanumDrive.getVelocityConstraint(DriveConstants.MAX_ACCEL, Math.toRadians(180), DriveConstants.TRACK_WIDTH),
+                            SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                     .splineToConstantHeading(new Vector2d(-24, 12), Math.toRadians(0))
                     .splineToConstantHeading(new Vector2d(-12, 10), Math.toRadians(0))
                     .splineTo(new Vector2d(-10,12),Math.toRadians(90))
