@@ -220,7 +220,7 @@ public class RightParkCone extends LinearOpMode {
 
         lift.lift(1850, false);
 
-        pipeline.turnToAlign(.77, false);
+        pipeline.turnToAlign(.79, false);
 
         distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
@@ -354,8 +354,7 @@ public class RightParkCone extends LinearOpMode {
                             SampleMecanumDrive.getVelocityConstraint(DriveConstants.MAX_ACCEL, Math.toRadians(180), DriveConstants.TRACK_WIDTH),
                             SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                     .splineToConstantHeading(new Vector2d(-24, 12), Math.toRadians(0))
-                    .splineToConstantHeading(new Vector2d(-12, 10), Math.toRadians(0))
-                    .splineTo(new Vector2d(-10,12),Math.toRadians(90))
+                    .splineToConstantHeading(new Vector2d(-12, 12), Math.toRadians(0))
                     .build();
 
             drive.followTrajectory(parkL);
@@ -406,10 +405,10 @@ public class RightParkCone extends LinearOpMode {
             e.printStackTrace();
         }
 
-//        while(opModeIsActive()){
-//            telemetry.addData("time", time);
-//            telemetry.update();
-//        }
+        while(opModeIsActive()){
+            telemetry.addData("time", time);
+            telemetry.update();
+        }
 
         liftThread.interrupt();
     }

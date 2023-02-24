@@ -264,13 +264,19 @@ public class FieldCentricDrive extends LinearOpMode {
                 arm.setTargetPosition(0);
             }
 
-            //            if(gamepad1.right_trigger > 0){
-//                Lift1.setPower(gamepad1.right_trigger);
-//                Lift2.setPower(gamepad1.right_trigger);
-//            }else if(gamepad1.left_trigger > 0){
-//                Lift1.setPower(-gamepad1.left_trigger);
-//                Lift2.setPower(-gamepad1.left_trigger);
-//            }
+            if(gamepad2.dpad_down){
+                if(toggle4){
+                    armFineTune += 50;
+                    toggle4 = false;
+                }
+            }else if(gamepad2.dpad_up){
+                if(toggle4){
+                    armFineTune -= 50;
+                    toggle4 = false;
+                }
+            }else{
+                toggle4 = true;
+            }
 
             if(Lift.isPressed()){
                 bottom = Lift1.getCurrentPosition();
@@ -358,13 +364,6 @@ public class FieldCentricDrive extends LinearOpMode {
                 if(runtime.seconds() < 115) {
                     leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
                 }
-            }
-
-
-            if(gamepad2.dpad_up){
-                fineTune = fineTune + 5;
-            }else if(gamepad2.dpad_down) {
-                fineTune = fineTune - 5;
             }
 
 

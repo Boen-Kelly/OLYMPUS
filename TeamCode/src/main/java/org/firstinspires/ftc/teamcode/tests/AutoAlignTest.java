@@ -44,8 +44,8 @@ public class AutoAlignTest extends LinearOpMode {
 
         while (!isStarted() && !isStopRequested()) {
             pipeline.setPipelines("pole", "pole");
-            pipeline.frontPoleDetector.setColors(true, false, false);
-            pipeline.backPoleDetector.setColors(true, false, false);
+            pipeline.frontPoleDetector.setColors(true, false, true);
+            pipeline.backPoleDetector.setColors(true, false, true);
         }
 
         telemetry.addLine("Waiting for start");
