@@ -134,7 +134,7 @@ public class FieldCentricDrive extends LinearOpMode {
         int armFineTune = 0;
         double savedTime = 0;
 
-        double leftArmPos = .473;
+        double leftArmPos = .3822;
         double rightArmPos = .323;
 
         //blinkinLedDriver = hardwareMap.get(RevBlinkinLedDriver.class, "led");
@@ -420,7 +420,7 @@ public class FieldCentricDrive extends LinearOpMode {
             if(gamepad1.left_bumper){
                 lilArm.setPosition(Range.clip(leftArmPos, .047, .473));
             }else{
-                lilArm.setPosition(0.04700000000000047);
+                lilArm.setPosition(0);
             }
 
 //            lilArm.setPosition(.047 + gamepad1.left_trigger * .477);
