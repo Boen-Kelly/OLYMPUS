@@ -232,7 +232,7 @@ public class JudgingLights extends LinearOpMode {
                 arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 arm.setTargetPosition(0);
             }else if (gamepad1.x){
-                arm.setTargetPosition(-500);
+                arm.setTargetPosition(-450);
                 Lift1.setTargetPosition(1700);
                 Lift2.setTargetPosition(Lift1.getTargetPosition());
                 Lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -254,6 +254,14 @@ public class JudgingLights extends LinearOpMode {
             if(gamepad1.right_stick_y != 0 && arm.getTargetPosition() != 0){
                 arm.setTargetPosition(arm.getTargetPosition()+(int)(gamepad1.right_stick_y*10));
             }
+            if (gamepad1.dpad_up) {
+                Slurper.setPower(1);
+            }else if (gamepad1.dpad_down){
+                Slurper.setPower(-1);
+            }else if(gamepad1.dpad_left || gamepad1.dpad_right){
+                Slurper.setPower(0);
+            }
+
         }
     }
     public void lightTimer(double runtime, RevBlinkinLedDriver Blinker){
