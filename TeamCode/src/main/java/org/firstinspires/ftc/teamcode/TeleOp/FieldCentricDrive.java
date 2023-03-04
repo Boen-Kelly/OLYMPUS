@@ -29,8 +29,10 @@
 
 package org.firstinspires.ftc.teamcode.TeleOp;
 
+import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -38,6 +40,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -90,9 +93,9 @@ public class FieldCentricDrive extends LinearOpMode {
     RevBlinkinLedDriver leds;
 
 
-    BNO055IMU imu;
+    BHI260IMU imu;
 
-    Orientation angles;
+    double angles;
 
     @Override
     public void runOpMode() {
@@ -101,11 +104,19 @@ public class FieldCentricDrive extends LinearOpMode {
         //RevBlinkinLedDriver.BlinkinPattern pattern;
         IntakeThread slurperThread = new IntakeThread(hardwareMap, gamepad1);
         //imu set up!
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
-        parameters.loggingEnabled      = true;
-        parameters.loggingTag          = "IMU";
+//        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+//        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+//        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+//        parameters.loggingEnabled      = true;
+//        parameters.loggingTag          = "IMU";
+
+        IMU.Parameters parameters = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
+                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+                )
+        );
+
         DcMotorEx Lift1;
         DcMotor Lift2;
         DcMotor arm;
@@ -138,10 +149,10 @@ public class FieldCentricDrive extends LinearOpMode {
         double rightArmPos = .323;
 
         //blinkinLedDriver = hardwareMap.get(RevBlinkinLedDriver.class, "led");
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu = hardwareMap.get(BHI260IMU.class, "imu");
         imu.initialize(parameters);
 
-        angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        angles   = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         String data = "0";
         try {
@@ -223,9 +234,9 @@ public class FieldCentricDrive extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            angles   = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
-            double heading = angles.firstAngle + offset;
+            double heading = angles + offset;
 
             telemetry.addData("heading", heading);
 
