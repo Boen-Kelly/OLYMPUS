@@ -274,7 +274,7 @@ public class AutoAlignPipeline {
             }
 
             if(top != null) {
-                distance = top.x - 120;
+                distance = top.x - 160;
                 Imgproc.line(input, new Point(top.x, 10), new Point(120, 10), new Scalar(0, 255, 0), 2);
             }
 

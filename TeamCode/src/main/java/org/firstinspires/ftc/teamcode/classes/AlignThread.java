@@ -126,6 +126,10 @@ public class AlignThread implements Runnable{
         }
     }
 
+    public double angleToCam(){
+        double ratio = pipeline.frontPoleDetector.getDistance() + 160 / 320;
+        return (ratio*55)/2;
+    }
     public void aimCam (boolean isFrontCam) {
         double P = 0;
         double D = 0;
