@@ -36,6 +36,7 @@ public class RoadRunnerThread implements Runnable{
         this.countTar = countTar;
     }
     public void countTajectory(){
+
     }
     public void calculateNextTar(float errorX, float errorY, Pose2d endPos, Pose2d nextPos){
 

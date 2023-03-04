@@ -95,7 +95,12 @@ public class RightParkCone extends LinearOpMode {
 
             telemetry.addData("Sleeve position", AprilTagID);
             telemetry.addLine("waiting for start");
+            telemetry.addData("trajectory duration", traj.duration());
+            telemetry.addData("trajectory length", traj.getPath().length());
+            telemetry.addData("current Pos", drive.getPoseEstimate());
+            telemetry.addData("current error", drive.getLastError());
             telemetry.update();
+
         }
 
         waitForStart();
@@ -106,6 +111,7 @@ public class RightParkCone extends LinearOpMode {
 //        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
 
 //        drive.turn(Math.toRadians(-40));
+
 
         pipeline.turnToAlign(.77, false);
 
