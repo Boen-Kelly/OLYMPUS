@@ -93,9 +93,9 @@ public class FieldCentricDrive extends LinearOpMode {
     RevBlinkinLedDriver leds;
 
 
-    BHI260IMU imu;
+    BNO055IMU imu;
 
-    double angles;
+    Orientation angles;
 
     @Override
     public void runOpMode() {
@@ -104,18 +104,12 @@ public class FieldCentricDrive extends LinearOpMode {
         //RevBlinkinLedDriver.BlinkinPattern pattern;
         IntakeThread slurperThread = new IntakeThread(hardwareMap, gamepad1);
         //imu set up!
-//        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-//        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-//        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
-//        parameters.loggingEnabled      = true;
-//        parameters.loggingTag          = "IMU";
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+        parameters.loggingEnabled      = true;
+        parameters.loggingTag          = "IMU";
 
-        IMU.Parameters parameters = new IMU.Parameters(
-                new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
-                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
-                )
-        );
 
         DcMotorEx Lift1;
         DcMotor Lift2;
@@ -149,10 +143,10 @@ public class FieldCentricDrive extends LinearOpMode {
         double rightArmPos = .323;
 
         //blinkinLedDriver = hardwareMap.get(RevBlinkinLedDriver.class, "led");
-        imu = hardwareMap.get(BHI260IMU.class, "imu");
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
 
-        angles   = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         String data = "0";
         try {
@@ -234,9 +228,9 @@ public class FieldCentricDrive extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            angles   = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
-            double heading = angles + offset;
+            double heading = angles.firstAngle + offset;
 
             telemetry.addData("heading", heading);
 
