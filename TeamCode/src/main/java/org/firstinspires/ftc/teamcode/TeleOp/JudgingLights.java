@@ -232,7 +232,7 @@ public class JudgingLights extends LinearOpMode {
                 arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 arm.setTargetPosition(0);
             }else if (gamepad1.x){
-                arm.setTargetPosition(-3400);
+                arm.setTargetPosition(-500);
                 Lift1.setTargetPosition(1700);
                 Lift2.setTargetPosition(Lift1.getTargetPosition());
                 Lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);

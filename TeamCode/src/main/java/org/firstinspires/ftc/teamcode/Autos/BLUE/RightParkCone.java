@@ -106,7 +106,7 @@ public class RightParkCone extends LinearOpMode {
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(-90)));
+        drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(90)));
 
 //        Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
 //                .addTemporalMarker(0, () -> {
@@ -129,19 +129,31 @@ public class RightParkCone extends LinearOpMode {
 //                .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(-220)))
 //                .build();
 
-        Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
+//        Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
+//                .addTemporalMarker(0, () -> {
+//                    lift.setSlurpPower(1);
+//                    pipeline.setPipelines("pole", "pole");
+//                })
+//                .splineToConstantHeading(new Vector2d(-32, 64.75), Math.toRadians(-90))
+//                .splineToConstantHeading(new Vector2d(-12, 57.75), Math.toRadians(-90))
+//                .lineTo(new Vector2d(-12, 16),
+//                        SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+//                        SampleMecanumDrive.getAccelerationConstraint(15))
+//                .splineTo(new Vector2d(-14,14), Math.toRadians(180))
+//                .lineToLinearHeading(new Pose2d(-24,14, Math.toRadians(-180)))
+//                .lineToSplineHeading(new Pose2d(-36,14, Math.toRadians(-220)))
+//                .build();
+
+        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
                     lift.setSlurpPower(1);
                     pipeline.setPipelines("pole", "pole");
                 })
-                .splineToConstantHeading(new Vector2d(-14, 59.75), Math.toRadians(-90))
-                .splineToConstantHeading(new Vector2d(-12, 57.75), Math.toRadians(-90))
-                .lineTo(new Vector2d(-12, 16),
-                        SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15))
-                .splineTo(new Vector2d(-14,14), Math.toRadians(180))
-                .lineToLinearHeading(new Pose2d(-24,14, Math.toRadians(-180)))
-                .lineToSplineHeading(new Pose2d(-36,14, Math.toRadians(-220)))
+                .lineToConstantHeading(new Vector2d(-32, 64.75))
+                .splineToConstantHeading(new Vector2d(-34, 62.75), Math.toRadians(-90))
+                .lineToLinearHeading(new Pose2d(-34,3, Math.toRadians(90)))
+                .lineToLinearHeading(new Pose2d(-34, 7.5, Math.toRadians(90)))
+                .lineToSplineHeading(new Pose2d(-34,12, Math.toRadians(140)))
                 .build();
 
         while(!isStarted() && !isStopRequested()) {
@@ -216,7 +228,7 @@ public class RightParkCone extends LinearOpMode {
         timer.reset();
         liftThread.start();
 
-        drive.followTrajectory(traj);
+        drive.followTrajectorySequence(traj);
 
         lift.lift(1850, false);
 
@@ -238,6 +250,9 @@ public class RightParkCone extends LinearOpMode {
                 .back(distanceToPole - 2,
                         SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(20))
+                .addTemporalMarker(1, () -> {
+                    lift.lift(1650, false);
+                })
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -263,7 +278,7 @@ public class RightParkCone extends LinearOpMode {
 
             Trajectory pickupcone = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
-                        lift.lift(0, false);
+                        lift.drop();
                         lift.setSlurpPower(0);
                     })
                     .forward(distanceToPole - 4)
