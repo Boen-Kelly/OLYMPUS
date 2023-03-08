@@ -1,28 +1,35 @@
 package org.firstinspires.ftc.teamcode.Autos.RED;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.LiftArm;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 //-2.91
 //-31.04
 //3.65
 @Autonomous(name = "RED AUTO")
+@Config
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
@@ -33,7 +40,13 @@ public class RightParkCone extends LinearOpMode {
         int middle = 7;
         int right = 8;
 
+        double exposure = 25;
+        int gain = 1;
+        int WB = 5000;
+
         double distanceToPole = 0, distanceToCone = 0;
+
+        boolean toggle1 = false;
 
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
@@ -48,16 +61,68 @@ public class RightParkCone extends LinearOpMode {
         pipeline.frontPoleDetector.setColors(false, true, false);
 
         DistanceSensor backDist, frontDist;
+        Servo lilArmL, lilArmR;
 
         backDist = hardwareMap.get(DistanceSensor.class, "backDist");
         frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
+        lilArmL = hardwareMap.get(Servo.class, "lilArm1");
+        lilArmR = hardwareMap.get(Servo.class, "lilArm2");
+
 
         LiftArm lift = new LiftArm(hardwareMap);
         Thread liftThread = new Thread(lift);
 
+        String[] camData = new String[3];
+        int c = 0;
+
+        try {
+            File obj = new File("/sdcard/FIRST/camVals.txt");
+            Scanner scan = new Scanner(obj);
+
+            while (scan.hasNextLine()){
+                telemetry.addLine("Reading...");
+                telemetry.update();
+                camData[c] = scan.nextLine();
+                c ++;
+            }
+            scan.close();
+        }catch (FileNotFoundException e){
+            telemetry.addLine("couldn't read");
+            telemetry.update();
+            e.printStackTrace();
+        }
+
+        exposure = Double.parseDouble(camData[0]);
+        gain = Integer.parseInt(camData[1]);
+        WB = Integer.parseInt(camData[2]);
+
+        lilArmL.setPosition(.047);
+        lilArmR.setPosition(.8);
+
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
         drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(-90)));
+
+//        Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
+//                .addTemporalMarker(0, () -> {
+//                    lift.setSlurpPower(1);
+//                    pipeline.setPipelines("pole", "pole");
+//                })
+//                .splineToConstantHeading(new Vector2d(-34, 59.75), Math.toRadians(-90))
+//                .splineToConstantHeading(new Vector2d(-36, 57.75), Math.toRadians(-90))
+//                .lineToSplineHeading(new Pose2d(-36, 52, Math.toRadians(-135)))
+//                .addTemporalMarker(.5, () -> {
+//                    lilArmL.setPosition(.382);
+//                })
+//                .lineToSplineHeading(new Pose2d(-36, 45, Math.toRadians(-45)),
+//                        SampleMecanumDrive.getVelocityConstraint(60, Math.toRadians(360), DriveConstants.TRACK_WIDTH),
+//                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
+//                .addTemporalMarker(2, () -> {
+//                    lilArmL.setPosition(.047);
+//                })
+//                .lineToLinearHeading(new Pose2d(-36,24, Math.toRadians(-90)))
+//                .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(-220)))
+//                .build();
 
         Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
                 .addTemporalMarker(0, () -> {
@@ -66,41 +131,90 @@ public class RightParkCone extends LinearOpMode {
                 })
                 .splineToConstantHeading(new Vector2d(-14, 59.75), Math.toRadians(-90))
                 .splineToConstantHeading(new Vector2d(-12, 57.75), Math.toRadians(-90))
-                .lineTo(new Vector2d(-12, 14),
+                .lineTo(new Vector2d(-12, 16),
                         SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
-                .splineTo(new Vector2d(-14,12), Math.toRadians(180))
-                .lineToLinearHeading(new Pose2d(-24,12, Math.toRadians(-180)))
-                .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(-220)))
+                        SampleMecanumDrive.getAccelerationConstraint(15))
+                .splineTo(new Vector2d(-14,14), Math.toRadians(180))
+                .lineToLinearHeading(new Pose2d(-24,14, Math.toRadians(-180)))
+                .lineToSplineHeading(new Pose2d(-36,14, Math.toRadians(-220)))
                 .build();
-
 
         while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
                 pipeline.setPipelines("pole", "pole");
+                pipeline.frontPoleDetector.setColors(true, false, false);
+                pipeline.backPoleDetector.setColors(true, false, false);
+                pipeline.pointCam(true, .4);
             }else if(gamepad1.b){
                 pipeline.setPipelines("sleeve", "sleeve");
+                pipeline.pointCam(true, .6);
             }else if(gamepad1.y){
                 pipeline.setPipelines("sleeve", "pole");
+                pipeline.backPoleDetector.setColors(true, false, false);
+                pipeline.frontPoleDetector.setColors(false, true, false);
+                pipeline.pointCam(true, .6);
             }
+
+            if(gamepad1.right_bumper){
+                if(toggle1){
+                    exposure += 10;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.left_bumper){
+                if(toggle1){
+                    exposure -= 10;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_up){
+                if(toggle1){
+                    gain += 1;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_down){
+                if(toggle1){
+                    gain -= 1;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_right){
+                if(toggle1){
+                    WB += 500;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_left){
+                if(toggle1) {
+                    WB -= 500;
+                    toggle1 = false;
+                }
+            }else{
+                toggle1 = true;
+            }
+
+            pipeline.setCamVals(exposure,gain,WB);
 
             AprilTagID = pipeline.AprilTagID(true);
 
             telemetry.addData("Sleeve position", AprilTagID);
+            telemetry.addData("exposure", exposure);
+            telemetry.addData("gain", gain);
+            telemetry.addData("WB", WB);
             telemetry.addLine("waiting for start");
             telemetry.update();
         }
+
+        pipeline.setPipelines("sleeve", "pole");
+        pipeline.backPoleDetector.setColors(true, false, false);
+        pipeline.frontPoleDetector.setColors(false, true, false);
+        pipeline.pointCam(true, .6);
 
         waitForStart();
         timer.reset();
         liftThread.start();
 
         drive.followTrajectory(traj);
-//        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
 
-//        drive.turn(Math.toRadians(-40));
+        lift.lift(1850, false);
 
-//        pipeline.turnToAlign(.77, false);
+//        pipeline.turnToAlign(.79, false);
 
         distanceToPole = backDist.getDistance(DistanceUnit.INCH);
 
@@ -114,11 +228,10 @@ public class RightParkCone extends LinearOpMode {
         drive.update();
 
         Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
-                .addTemporalMarker(0, () -> {
-                    lift.lift(1400,false);
-                })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getHeading()))
-                .back(distanceToPole - 3)
+                .back(distanceToPole - 2,
+                        SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
                 .build();
 
         drive.followTrajectory(firstDeliver);
@@ -147,13 +260,13 @@ public class RightParkCone extends LinearOpMode {
                         lift.lift(0, false);
                         lift.setSlurpPower(0);
                     })
-//                    .forward(distanceToPole - 4)
-                    .splineTo(new Vector2d(-40, 12), Math.toRadians(180))
+                    .forward(distanceToPole - 4)
+                    .splineTo(new Vector2d(-40, 14), Math.toRadians(180))
                     .build();
 
             drive.followTrajectory(pickupcone);
 
-//            pipeline.turnToAlign(.83, true);
+//            pipeline.turnToAlign(.525, true);
 
 //            sleep(500);
             distanceToCone = frontDist.getDistance(DistanceUnit.INCH);
@@ -162,8 +275,8 @@ public class RightParkCone extends LinearOpMode {
                 distanceToCone = 26;
             }
 
-            telemetry.addData("dist", distanceToCone);
-            telemetry.update();
+//            telemetry.addData("dist", distanceToCone);
+//            telemetry.update();
             drive.update();
 
             Trajectory collect = drive.trajectoryBuilder(drive.getPoseEstimate())
@@ -171,20 +284,20 @@ public class RightParkCone extends LinearOpMode {
                         lift.lift(1000, true);
                         lift.setSlurpPower(1);
                     })
-                    .forward(distanceToCone-7)
+                    .forward(distanceToCone-2)
                     .build();
 
             drive.followTrajectory(collect);
 
             lift.drop(350);
-            sleep(1000);
+            sleep(500);
             lift.lift();
 
             Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
                         lift.drop(500);
                     })
-                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(135)))
+                    .lineToLinearHeading(new Pose2d(-36,14, Math.toRadians(135)))
                     .build();
 //            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
 //                    .addTemporalMarker(.5, () -> {
@@ -212,9 +325,11 @@ public class RightParkCone extends LinearOpMode {
 
             Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(0, () -> {
-                        lift.lift(1500, false);
+                        lift.lift(1850, false);
                     })
-                    .back(distanceToPole-3)
+                    .back(distanceToPole-2,
+                            SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                            SampleMecanumDrive.getAccelerationConstraint(20))
                     .build();
 
             drive.followTrajectory(backup);
@@ -229,10 +344,11 @@ public class RightParkCone extends LinearOpMode {
                         lift.drop();
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                    .splineTo(new Vector2d(-36, 12), Math.toRadians(0))
+                    .splineTo(new Vector2d(-36, 12), Math.toRadians(0),
+                            SampleMecanumDrive.getVelocityConstraint(DriveConstants.MAX_ACCEL, Math.toRadians(180), DriveConstants.TRACK_WIDTH),
+                            SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
                     .splineToConstantHeading(new Vector2d(-24, 12), Math.toRadians(0))
-                    .splineToConstantHeading(new Vector2d(-12, 10), Math.toRadians(0))
-                    .splineTo(new Vector2d(-10,12),Math.toRadians(90))
+                    .splineToConstantHeading(new Vector2d(-12, 12), Math.toRadians(0))
                     .build();
 
             drive.followTrajectory(parkL);
@@ -248,27 +364,33 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectory(park);
         }else if(AprilTagID == right) {
-            Trajectory park = drive.trajectoryBuilder(drive.getPoseEstimate())
+            TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(1, () -> {
                         lift.setSlurpPower(0);
                         lift.drop();
                     })
-//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
-                    .splineTo(new Vector2d(-34,10), Math.toRadians(0))
-                    .splineToConstantHeading(new Vector2d(-48, 12), Math.toRadians(0))
-                    .splineToConstantHeading(new Vector2d(-60,12), Math.toRadians(0))
+                    .lineToLinearHeading(new Pose2d(-34,12, Math.toRadians(0)))
+                    .lineToLinearHeading(new Pose2d(-60,12, Math.toRadians(0)))
                     .build();
 
-            drive.followTrajectory(park);
+            drive.followTrajectorySequence(park);
         }
 
         double time = timer.time(TimeUnit.SECONDS);
 
         try {
             File test = new File("/sdcard/FIRST/nums.txt");
+            File camVals = new File("/sdcard/FIRST/camVals.txt");
+
             FileWriter writer = new FileWriter("/sdcard/FIRST/nums.txt");
+            FileWriter camValWriter = new FileWriter("/sdcard/FIRST/camVals.txt");
+
             writer.write(Math.toDegrees(drive.getPoseEstimate().getHeading()) + "");
+            camValWriter.write(exposure + "\n" + gain + "\n" + WB);
+
             writer.close();
+            camValWriter.close();
+
             telemetry.addLine("successfully wrote!");
             telemetry.update();
         } catch (IOException e) {

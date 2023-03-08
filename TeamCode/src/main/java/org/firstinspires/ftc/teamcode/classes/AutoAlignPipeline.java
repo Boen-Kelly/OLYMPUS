@@ -38,9 +38,6 @@ import java.util.concurrent.TimeUnit;
 public class AutoAlignPipeline {
     OpenCvWebcam backCam;
     OpenCvWebcam frontCam;
-    ExposureControl frontExposureControl, backExposureControl;
-    GainControl frontGainControl, backGainControl;
-    WhiteBalanceControl frontWBControl, backWBControl;
 
     String telemetry = "waiting for input";
     public static int threshVal = 128;
@@ -68,6 +65,9 @@ public class AutoAlignPipeline {
     // UNITS ARE METERS
     double tagsize = 0.166;
 
+    ExposureControl frontExposureControl, backExposureControl;
+    GainControl frontGainControl, backGainControl;
+    WhiteBalanceControl frontWBControl, backWBControl;
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -780,6 +780,36 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
+    public String setCamVals(double exposure, int gain, int WB){
+        frontExposureControl = frontCam.getExposureControl();
+        backExposureControl = backCam.getExposureControl();
+
+        frontGainControl = frontCam.getGainControl();
+        backGainControl = backCam.getGainControl();
+
+        frontWBControl = frontCam.getWhiteBalanceControl();
+        backWBControl = backCam.getWhiteBalanceControl();
+
+        frontExposureControl.setAePriority(false);
+        backExposureControl.setAePriority(false);
+
+        frontExposureControl.setMode(ExposureControl.Mode.Manual);
+        backExposureControl.setMode(ExposureControl.Mode.Manual);
+        frontWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+        backWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+
+        frontExposureControl.setExposure((long)exposure, TimeUnit.MILLISECONDS);
+        backExposureControl.setExposure((long)exposure, TimeUnit.MILLISECONDS);
+
+        frontGainControl.setGain(gain);
+        backGainControl.setGain(gain);
+
+        frontWBControl.setWhiteBalanceTemperature(WB);
+        backWBControl.setWhiteBalanceTemperature(WB);
+
+        return "exposure: " + frontExposureControl.getExposure(TimeUnit.MILLISECONDS) + "\ngain: " + frontGainControl.getGain() + "\nWB: " + frontWBControl.getWhiteBalanceTemperature();
+    }
+
     public int AprilTagID(boolean isUsingFrontCam){
         ArrayList<AprilTagDetection> detections = new ArrayList<AprilTagDetection>();
         if(isUsingFrontCam) {
@@ -824,78 +854,4 @@ public class AutoAlignPipeline {
             return backPoleDetector.height(backPoleDetector.bigRotatedRect);
         }
     }
-
-    /** The code below is the extent to which I know ExposureControl. I created an
-     * ExposureControl variable for each camera at the beginning of this class.
-     * Using the methods below, I was able to prevent the exposure from being automated.
-     * However, after using the method setExposure(long exposure){...} I discovered that the
-     * exposure was not actually being set to the exposure variable which I got from user
-     * input. I think this may have to do with my lack of experience with the variable type
-     * "long" or it might have to do with AE priority, which I wasn't able to look into.
-     * Here is the link to a FIRST article I found that might help.
-     * https://ftc-docs.firstinspires.org/programming_resources/vision/webcam_controls/webcam-controls.html
-     * */
-    public long setExposure(long exposure){
-        frontExposureControl = frontCam.getExposureControl();
-        backExposureControl = backCam.getExposureControl();
-
-        frontExposureControl.setMode(ExposureControl.Mode.Manual);
-        backExposureControl.setMode(ExposureControl.Mode.Manual);
-
-        frontExposureControl.setExposure(exposure, TimeUnit.MILLISECONDS);
-        backExposureControl.setExposure(exposure, TimeUnit.MILLISECONDS);
-
-        return frontExposureControl.getExposure(TimeUnit.MILLISECONDS);
-    }
-
-    public int setGain(int gain){
-        frontGainControl = frontCam.getGainControl();
-        backGainControl = backCam.getGainControl();
-
-        frontGainControl.setGain(gain);
-        backGainControl.setGain(gain);
-
-        return frontGainControl.getGain();
-    }
-
-    public int setWB(int WB){
-        frontWBControl = frontCam.getWhiteBalanceControl();
-        backWBControl = backCam.getWhiteBalanceControl();
-
-        frontWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
-        backWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
-
-        frontWBControl.setWhiteBalanceTemperature(WB);
-        backWBControl.setWhiteBalanceTemperature(WB);
-
-        return frontWBControl.getWhiteBalanceTemperature();
-    }
-
-    public boolean setAEPriority(boolean priority){
-        frontExposureControl.setAePriority(priority);
-        backExposureControl.setAePriority(priority);
-
-        return frontExposureControl.getAePriority();
-    }
-
-    public int getMaxWB() {
-        return frontWBControl.getMaxWhiteBalanceTemperature();
-    }
-
-    public int getMaxGain(boolean frontCam){
-        if(frontCam){
-            return frontGainControl.getMaxGain();
-        }else{
-            return backGainControl.getMaxGain();
-        }
-    }
-
-    public double getMaxExposure(boolean frontCam){
-        if(frontCam){
-            return frontExposureControl.getMaxExposure(TimeUnit.MILLISECONDS);
-        }else{
-            return backExposureControl.getMaxExposure(TimeUnit.MILLISECONDS);
-        }
-    }
-    //*/
 }
