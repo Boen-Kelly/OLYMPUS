@@ -109,7 +109,7 @@ public class AutoAlignPipeline {
             public void onOpened()
             {
                 frontCam.setPipeline(frontSleeveDetector);
-                frontCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+                frontCam.startStreaming(320, 240, OpenCvCameraRotation.UPSIDE_DOWN);
             }
 
             @Override
@@ -275,10 +275,10 @@ public class AutoAlignPipeline {
 
             if(top != null) {
                 distance = top.x - 160;
-                Imgproc.line(input, new Point(top.x, 10), new Point(120, 10), new Scalar(0, 255, 0), 2);
+                Imgproc.line(input, new Point(top.x, 10), new Point(160, 10), new Scalar(0, 255, 0), 2);
             }
 
-            Imgproc.rectangle(input,new Point(120-boxWidth/2,5), new Point(120+boxWidth/2,15), new Scalar(0,0,255), 2);
+            Imgproc.rectangle(input,new Point(160-boxWidth/2,5), new Point(160+boxWidth/2,15), new Scalar(0,0,255), 2);
 
             telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance;
 

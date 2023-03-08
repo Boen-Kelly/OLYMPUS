@@ -125,18 +125,13 @@ public class AlignThread implements Runnable{
             //----------------------------------------
         }
     }
-
-    public double angleToCam(){
-        double ratio = pipeline.frontPoleDetector.getDistance() + 160 / 320;
-        return (ratio*55)/2;
-    }
     public void aimCam (boolean isFrontCam) {
         double P = 0;
         double D = 0;
 
         if(isFrontCam) {
             if(!(-20 < pipeline.frontPoleDetector.getDistance() && pipeline.frontPoleDetector.getDistance() < 20)) {
-                P = (pipeline.frontPoleDetector.getDistance() / 120) * kPFrontCam;
+                P = (pipeline.frontPoleDetector.getDistance() / 160) * kPFrontCam;
                 I += pipeline.frontPoleDetector.getDistance() * kIFrontCam;
                 D = ((pipeline.frontPoleDetector.getDistance() - prevCamAngle)/ (time.milliseconds() - prevTime))* kDFrontCam;
             }
@@ -164,6 +159,11 @@ public class AlignThread implements Runnable{
             back.setPosition(backPoint);
         }
         prevTime = time.milliseconds();
+    }
+
+    public double angleToCam(){
+        double ratio = pipeline.frontPoleDetector.getDistance() + 160.0 / 320.0;
+        return (ratio*55)/2;
     }
 
     public double getRobotDistance(boolean usingFrontCam){

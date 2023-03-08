@@ -87,14 +87,15 @@ public class AutoAlignTest extends LinearOpMode {
 //            pipeline.aimCam();
 
             if(gamepad1.a){
-                aligner.engageMaster(5,false, 0);
+                aligner.engageMaster(5,true, 0);
             }else if(gamepad1.y){
                 aligner.disengageMaster();
             }
 
+
             telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("calculated dist", aligner.getRobotDistance(false));
-            telemetry.addData("angle", aligner.getAngle(false));
+            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
+            telemetry.addData("angle", aligner.getAngle(true));
             telemetry.addData("xDist", (int)aligner.xDist);
             telemetry.addData("yDist", (int)aligner.yDist);
             telemetry.addData("aligned?", aligner.aligned());
