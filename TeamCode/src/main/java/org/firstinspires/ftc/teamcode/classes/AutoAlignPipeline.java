@@ -2,14 +2,12 @@
 package org.firstinspires.ftc.teamcode.classes;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.checkerframework.checker.units.qual.A;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -34,6 +32,7 @@ import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Config
 public class AutoAlignPipeline {
@@ -43,26 +42,11 @@ public class AutoAlignPipeline {
     String telemetry = "waiting for input";
     public static int threshVal = 128;
 
-    public static double LH = 90, LS = 170, LV = 160;
-    public static double UH = 120, US = 255, UV = 255;
+    public static double LH = 90, LS = 160, LV = 200;
+    public static double UH = 105, US = 255, UV = 255;
 
     public static int x = 10, y = 10;
     public static double boxWidth = 20;
-    double startTime = 0;
-    double maxWidth = 0;
-    public static double rate = .0005;
-    public static double frontPoint = .84, backPoint = .8;
-
-    public final double ROBOT_X = -4.75;
-    public final double ROBOT_Y = -5.75;
-    public static double lowerBound = 0;
-    public static double upperBound = .85;
-
-
-    DcMotor bl, br, fl, fr;
-    Servo front, back;
-
-    ElapsedTime time = new ElapsedTime();
 
     DuckPos position;
     public static Rect redRect = new Rect(105,245,15,15);
@@ -78,36 +62,14 @@ public class AutoAlignPipeline {
     double cx = 402.145;
     double cy = 221.506;
 
-    public double xDist = 0, yDist = 0;
-
     // UNITS ARE METERS
     double tagsize = 0.166;
 
+    ExposureControl frontExposureControl, backExposureControl;
+    GainControl frontGainControl, backGainControl;
+    WhiteBalanceControl frontWBControl, backWBControl;
 
     public AutoAlignPipeline(HardwareMap hardwareMap, String camName){
-
-        bl = hardwareMap.get(DcMotor.class, "bl");
-        br = hardwareMap.get(DcMotor.class, "br");
-        fl = hardwareMap.get(DcMotor.class, "fl");
-        fr = hardwareMap.get(DcMotor.class, "fr");
-
-        front = hardwareMap.get(Servo.class, "front");
-        back = hardwareMap.get(Servo.class, "back");
-
-        front.scaleRange(lowerBound, upperBound);
-
-        front.setPosition(frontPoint);
-        back.setPosition(backPoint);
-
-        bl.setDirection(DcMotorSimple.Direction.REVERSE);
-        fl.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         int[] viewportContainerIds = OpenCvCameraFactory.getInstance()
                 .splitLayoutForMultipleViewports(
@@ -147,7 +109,7 @@ public class AutoAlignPipeline {
             public void onOpened()
             {
                 frontCam.setPipeline(frontSleeveDetector);
-                frontCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+                frontCam.startStreaming(320, 240, OpenCvCameraRotation.UPSIDE_DOWN);
             }
 
             @Override
@@ -191,7 +153,7 @@ public class AutoAlignPipeline {
 
         Point top, bottom;
 
-        Mat kernel = new Mat(12,12, CvType.CV_8UC1);
+        Mat kernel = new Mat(6,6, CvType.CV_8UC1);
         double maxWidth = 0;
         double maxRotatedWidth = 0;
         double avg1, avg2;
@@ -312,11 +274,11 @@ public class AutoAlignPipeline {
             }
 
             if(top != null) {
-                distance = top.x - 120;
-                Imgproc.line(input, new Point(top.x, 10), new Point(120, 10), new Scalar(0, 255, 0), 2);
+                distance = top.x - 160;
+                Imgproc.line(input, new Point(top.x, 10), new Point(160, 10), new Scalar(0, 255, 0), 2);
             }
 
-            Imgproc.rectangle(input,new Point(120-boxWidth/2,5), new Point(120+boxWidth/2,15), new Scalar(0,0,255), 2);
+            Imgproc.rectangle(input,new Point(160-boxWidth/2,5), new Point(160+boxWidth/2,15), new Scalar(0,0,255), 2);
 
             telemetry = "contours.length: " + contours.size() + "\nwidth: " + maxWidth + "\ndistance: " + distance;
 
@@ -818,70 +780,34 @@ public class AutoAlignPipeline {
         return telemetry;
     }
 
-    public void aimCam (boolean isFrontCam) {
-        double speed = 0;
+    public String setCamVals(double exposure, int gain, int WB){
+        frontExposureControl = frontCam.getExposureControl();
+        backExposureControl = backCam.getExposureControl();
 
-        if(isFrontCam) {
-            if (frontPoleDetector.getDistance() > 10 || frontPoleDetector.getDistance() < -10){
-                speed = (frontPoleDetector.getDistance() / 120) * rate;
-            }
-            frontPoint += speed;
+        frontGainControl = frontCam.getGainControl();
+        backGainControl = backCam.getGainControl();
 
-            front.setPosition(frontPoint);
-        }else{
-            if (backPoleDetector.getDistance() > 10 || backPoleDetector.getDistance() < -10){
-                speed = (backPoleDetector.getDistance() / 120) * rate;
-            }
-            backPoint += speed;
-            back.setPosition(backPoint);
-        }
+        frontWBControl = frontCam.getWhiteBalanceControl();
+        backWBControl = backCam.getWhiteBalanceControl();
 
+        frontExposureControl.setAePriority(false);
+        backExposureControl.setAePriority(false);
 
-    }
+        frontExposureControl.setMode(ExposureControl.Mode.Manual);
+        backExposureControl.setMode(ExposureControl.Mode.Manual);
+        frontWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+        backWBControl.setMode(WhiteBalanceControl.Mode.MANUAL);
 
-    public double align(double camPos, double maxPower, boolean usingFrontCam){
-        double speed;
-        if(usingFrontCam){
-            front.setPosition(camPos);
-            speed = frontPoleDetector.getDistance()/120;
-        }else{
-            back.setPosition(camPos);
-            speed = backPoleDetector.getDistance()/120;
-        }
+        frontExposureControl.setExposure((long)exposure, TimeUnit.MILLISECONDS);
+        backExposureControl.setExposure((long)exposure, TimeUnit.MILLISECONDS);
 
+        frontGainControl.setGain(gain);
+        backGainControl.setGain(gain);
 
-        double output = Math.min(maxPower,speed);
-        output = Math.max(-maxPower, output);
-        return output;
-    }
+        frontWBControl.setWhiteBalanceTemperature(WB);
+        backWBControl.setWhiteBalanceTemperature(WB);
 
-
-    public void turnToAlign(double camPos, boolean usingFrontCam) {
-        time.reset();
-        while (time.milliseconds() < 3000 && (time.milliseconds() - startTime) < 500) {
-            fl.setPower(align(camPos, .1, usingFrontCam));
-            br.setPower(-align(camPos, .1, usingFrontCam));
-            bl.setPower(align(camPos, .1, usingFrontCam));
-            fr.setPower(-align(camPos, .1 , usingFrontCam));
-
-            if(!aligned(usingFrontCam)){
-                startTime = time.milliseconds();
-            }
-        }
-    }
-
-    public void strafeToAlign(double camPos, boolean usingFrontCam){
-        time.reset();
-        while(time.milliseconds() < 5000 && (time.milliseconds() - startTime) < 500) {
-            fl.setPower(align(camPos, .5, usingFrontCam));
-            br.setPower(align(camPos, .5, usingFrontCam));
-            bl.setPower(-align(camPos, .5, usingFrontCam));
-            fr.setPower(-align(camPos, .5, usingFrontCam));
-
-            if(!aligned(usingFrontCam)){
-                startTime = time.milliseconds();
-            }
-        }
+        return "exposure: " + frontExposureControl.getExposure(TimeUnit.MILLISECONDS) + "\ngain: " + frontGainControl.getGain() + "\nWB: " + frontWBControl.getWhiteBalanceTemperature();
     }
 
     public int AprilTagID(boolean isUsingFrontCam){
@@ -896,14 +822,6 @@ public class AutoAlignPipeline {
             return detections.get(0).id;
         }else{
             return 6;
-        }
-    }
-
-    public boolean aligned(boolean isUsingFrontCam){
-        if(isUsingFrontCam) {
-            return -boxWidth / 2 < frontPoleDetector.getDistance() && frontPoleDetector.getDistance() < boxWidth / 2;
-        }else{
-            return -boxWidth / 2 < backPoleDetector.getDistance() && backPoleDetector.getDistance() < boxWidth / 2;
         }
     }
 
@@ -935,25 +853,5 @@ public class AutoAlignPipeline {
         }else{
             return backPoleDetector.height(backPoleDetector.bigRotatedRect);
         }
-    }
-
-    public double getRobotDistance(boolean usingFrontCam){
-        return 382.3333333/getMaxWidth(usingFrontCam);
-    }
-
-    public double getAngle(boolean usingFrontCam){
-        if(usingFrontCam){
-            return front.getPosition() * 180;
-        }else{
-            return back.getPosition() * 180;
-        }
-    }
-
-    public void masterAlign(double distance, boolean usingFrontCam){
-        double r = getRobotDistance(usingFrontCam);
-        double angle = getAngle(usingFrontCam);
-
-        xDist = (r * Math.cos(angle)) - ROBOT_X - distance;
-        yDist = (r * Math.sin(angle)) - ROBOT_Y;
     }
 }

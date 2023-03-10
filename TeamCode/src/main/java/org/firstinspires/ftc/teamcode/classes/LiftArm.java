@@ -35,7 +35,7 @@ public class LiftArm implements Runnable{
 
     public void run() {
         while (!Thread.interrupted()){
-            if(isLiftUp && (arm.getCurrentPosition() < -300 || intake)){
+            if(isLiftUp && (arm.getCurrentPosition() < -150 || intake)){
                 lift1.setTargetPosition(height);
                 lift2.setTargetPosition(lift1.getTargetPosition());
                 lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -52,7 +52,7 @@ public class LiftArm implements Runnable{
             }
 
             if(!intake && isLiftUp){
-                arm.setTargetPosition(-1350);
+                arm.setTargetPosition(-1310);
             }else{
                 arm.setTargetPosition(0);
             }
