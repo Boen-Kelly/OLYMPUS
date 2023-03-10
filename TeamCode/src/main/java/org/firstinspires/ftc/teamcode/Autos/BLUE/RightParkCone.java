@@ -151,20 +151,24 @@ public class RightParkCone extends LinearOpMode {
                 .lineToSplineHeading(new Pose2d(-34,12, Math.toRadians(140)))
                 .build();
 
+        //TODO: Fix this problem! There needs to be an auto align thread in here,
+        // in order to set the cameras to a specific heading, so that we can see the
+        // signal sleeve at the beginning of autonomous. There are 4 instances in which this
+        // should be fixed, so make sure to get all of them!
         while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
                 pipeline.setPipelines("pole", "pole");
                 pipeline.frontPoleDetector.setColors(true, false, false);
                 pipeline.backPoleDetector.setColors(true, false, false);
-                pipeline.pointCam(true, .4);
+//                pipeline.pointCam(true, .4);
             }else if(gamepad1.b){
                 pipeline.setPipelines("sleeve", "sleeve");
-                pipeline.pointCam(true, .6);
+//                pipeline.pointCam(true, .6);
             }else if(gamepad1.y){
                 pipeline.setPipelines("sleeve", "pole");
                 pipeline.backPoleDetector.setColors(true, false, false);
                 pipeline.frontPoleDetector.setColors(false, false, true);
-                pipeline.pointCam(true, .6);
+//                pipeline.pointCam(true, .6);
             }
 
             if(gamepad1.right_bumper){
@@ -216,7 +220,7 @@ public class RightParkCone extends LinearOpMode {
         pipeline.setPipelines("sleeve", "pole");
         pipeline.backPoleDetector.setColors(true, false, false);
         pipeline.frontPoleDetector.setColors(false, false, true);
-        pipeline.pointCam(true, .6);
+//        pipeline.pointCam(true, .6);
 
         waitForStart();
         timer.reset();

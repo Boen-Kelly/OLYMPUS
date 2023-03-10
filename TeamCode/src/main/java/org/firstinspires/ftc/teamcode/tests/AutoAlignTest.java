@@ -20,6 +20,7 @@ public class AutoAlignTest extends LinearOpMode {
     public static int gain = 1;
     public static int WB = 5000;
     public static boolean AEPriority = false;
+    boolean toggle1 = false;
 
     public void runOpMode(){
 //        DcMotor bl, br, fl, fr;
@@ -74,6 +75,42 @@ public class AutoAlignTest extends LinearOpMode {
 
         while (opModeIsActive()){
 
+            if(gamepad1.right_bumper){
+                if(toggle1){
+                    exposure += 10;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.left_bumper){
+                if(toggle1){
+                    exposure -= 10;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_up){
+                if(toggle1){
+                    gain += 1;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_down){
+                if(toggle1){
+                    gain -= 1;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_right){
+                if(toggle1){
+                    WB += 500;
+                    toggle1 = false;
+                }
+            }else if(gamepad1.dpad_left){
+                if(toggle1) {
+                    WB -= 500;
+                    toggle1 = false;
+                }
+            }else{
+                toggle1 = true;
+            }
+
+            pipeline.setCamVals(exposure,gain,WB);
+
 //            fl.setPower(pipeline.align(cameraPoint, .1, false));
 //            br.setPower(-pipeline.align(cameraPoint, .1, false));
 //            bl.setPower(pipeline.align(cameraPoint, .1, false));
@@ -105,6 +142,9 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.addData("ySpeed", aligner.ySpeed);
             telemetry.addData("backDist", aligner.backDist.getDistance(DistanceUnit.INCH));
             telemetry.addData("frontDist", aligner.frontDist.getDistance(DistanceUnit.INCH));
+            telemetry.addData("exposure", exposure);
+            telemetry.addData("gain", gain);
+            telemetry.addData("WB", WB);
             telemetry.update();
         }
         alignerThread.interrupt();

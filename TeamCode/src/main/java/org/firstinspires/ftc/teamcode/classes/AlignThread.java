@@ -20,7 +20,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 public class AlignThread implements Runnable{
     private boolean usingFrontCam;
     private boolean masterEngaged = false;
-    private boolean alignEngaged = false;
+    private boolean firstLoop = true;
     private double distanceToTarget = 0;
     double robotHeading = 0;
     public static double kPFrontCam = .03;
@@ -43,7 +43,7 @@ public class AlignThread implements Runnable{
     public static double frontPoint = .84, backPoint = .8;
     public final double ROBOT_X = -5.75;
     public final double ROBOT_Y = -5.75;
-    public double xDist = 0, yDist = 0;
+    public double xDist = 0, yDist = 0, totalYDist = 0;
     double angleError = 0, lastAngleError = 0;
     double I = 0;
     public double xSpeed = 0, ySpeed = 0;
@@ -99,6 +99,10 @@ public class AlignThread implements Runnable{
             if(masterEngaged) {
                 masterAlign(distanceToTarget, robotHeading, usingFrontCam);
                 aimCam(usingFrontCam);
+
+                if(firstLoop){
+                    totalYDist = yDist;
+                }
 
                 xSpeed = xDist * kPX;
 
@@ -288,13 +292,5 @@ public class AlignThread implements Runnable{
 
     public void disengageMaster(){
         masterEngaged = false;
-    }
-
-    public void engageAlign(){
-        alignEngaged = true;
-    }
-
-    public void disengageAlign(){
-        alignEngaged = false;
     }
 }
