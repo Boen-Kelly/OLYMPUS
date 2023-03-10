@@ -21,7 +21,7 @@ public class AlignThread implements Runnable{
     private boolean usingFrontCam;
     private boolean masterEngaged = false;
     private boolean firstLoop = true;
-    private double distanceToTarget = 0;
+    public static double distanceToTarget = 0;
     double robotHeading = 0;
     public static double kPFrontCam = .03;
     public static double kIFrontCam = 0;
@@ -63,6 +63,8 @@ public class AlignThread implements Runnable{
     public DistanceSensor frontDist, backDist;
 
     private AutoAlignPipeline pipeline;
+    ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+    private double lastTime = 0;
     public AlignThread(HardwareMap hardwareMap, AutoAlignPipeline pipeline, BNO055IMU.Parameters parameters){
 
         bl = hardwareMap.get(DcMotor.class, "bl");
@@ -86,7 +88,7 @@ public class AlignThread implements Runnable{
 //        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 //        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        front.scaleRange(.13, .85);
+        front.scaleRange(0, .63);
         back.scaleRange(.48,1);
 
         front.setPosition(frontPoint);
@@ -94,6 +96,7 @@ public class AlignThread implements Runnable{
     }
 
     public void run() {
+        timer.reset();
         while (!Thread.interrupted()){
             // master align code
             if(masterEngaged) {
@@ -120,13 +123,17 @@ public class AlignThread implements Runnable{
                     br.setPower(-gyroAlign(robotHeading) - xSpeed - yAlign(distanceToTarget, usingFrontCam));
                 }
 //                masterEngaged = !aligned();
+                firstLoop = false;
             }else{
                 fl.setPower(0);
                 bl.setPower(0);
                 fr.setPower(0);
                 br.setPower(0);
+                firstLoop = true;
             }
             //----------------------------------------
+
+            lastTime = timer.time();
         }
     }
     public void aimCam (boolean isFrontCam) {
@@ -176,7 +183,7 @@ public class AlignThread implements Runnable{
 
     public double getAngle(boolean usingFrontCam){
         if(usingFrontCam){
-            return 180 - front.getPosition() * 180;
+            return 180 - (front.getPosition() * 180) - 50.4;
         }else{
             return 180 - back.getPosition() * 115;
         }
@@ -292,5 +299,9 @@ public class AlignThread implements Runnable{
 
     public void disengageMaster(){
         masterEngaged = false;
+    }
+
+    public double getCycleTime(){
+        return timer.time() - lastTime;
     }
 }

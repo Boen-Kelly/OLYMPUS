@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -15,19 +16,21 @@ import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 //@Disabled
 @Config
 public class AutoAlignTest extends LinearOpMode {
+    ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
     public static double cameraPoint = .75;
     public static double exposure = 25;
     public static int gain = 1;
     public static int WB = 5000;
     public static boolean AEPriority = false;
     boolean toggle1 = false;
+    double lastTime = 0;
 
     public void runOpMode(){
 //        DcMotor bl, br, fl, fr;
         double distance;
 
-        FtcDashboard dashboard = FtcDashboard.getInstance();
-        Telemetry telemetry = dashboard.getTelemetry();
+//        FtcDashboard dashboard = FtcDashboard.getInstance();
+//        Telemetry telemetry = dashboard.getTelemetry();
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
@@ -73,6 +76,7 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.update();
         }
 
+        timer.reset();
         while (opModeIsActive()){
 
             if(gamepad1.right_bumper){
@@ -125,27 +129,30 @@ public class AutoAlignTest extends LinearOpMode {
 
             if(gamepad1.a){
                 aligner.engageMaster(5,true, 0);
-            }else if(gamepad1.y){
+            }else if(gamepad1.y || aligner.aligned()){
                 aligner.disengageMaster();
             }
 
-
-            telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
-            telemetry.addData("angle", aligner.getAngle(true));
-            telemetry.addData("xDist", (int)aligner.xDist);
-            telemetry.addData("yDist", (int)aligner.yDist);
-            telemetry.addData("aligned?", aligner.aligned());
-            telemetry.addData("gyro angle", aligner.gyroHeading());
-            telemetry.addData("gyro speed", aligner.gyroAlign(0));
-            telemetry.addData("xSpeed", aligner.xSpeed);
-            telemetry.addData("ySpeed", aligner.ySpeed);
-            telemetry.addData("backDist", aligner.backDist.getDistance(DistanceUnit.INCH));
-            telemetry.addData("frontDist", aligner.frontDist.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("Pipeline says", pipeline);
+//            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
+//            telemetry.addData("angle", aligner.getAngle(true));
+//            telemetry.addData("xDist", (int)aligner.xDist);
+//            telemetry.addData("yDist", (int)aligner.yDist);
+//            telemetry.addData("aligned?", aligner.aligned());
+//            telemetry.addData("gyro angle", aligner.gyroHeading());
+//            telemetry.addData("gyro speed", aligner.gyroAlign(0));
+//            telemetry.addData("xSpeed", aligner.xSpeed);
+//            telemetry.addData("ySpeed", aligner.ySpeed);
+//            telemetry.addData("backDist", aligner.backDist.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("frontDist", aligner.frontDist.getDistance(DistanceUnit.INCH));
             telemetry.addData("exposure", exposure);
             telemetry.addData("gain", gain);
             telemetry.addData("WB", WB);
+            telemetry.addData("AlignTest loop time", timer.time() - lastTime);
+            telemetry.addData("AlignThread loop time", aligner.getCycleTime());
             telemetry.update();
+
+            lastTime = timer.time();
         }
         alignerThread.interrupt();
     }
