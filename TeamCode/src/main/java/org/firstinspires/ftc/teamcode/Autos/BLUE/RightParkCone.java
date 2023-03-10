@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
@@ -17,8 +18,10 @@ import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySe
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.LiftArm;
 import org.firstinspires.ftc.teamcode.classes.MLToolChain;
+import org.firstinspires.ftc.teamcode.classes.RoadRunnerThread;
 import org.firstinspires.ftc.teamcode.classes.SignalSleeve;
 import org.openftc.apriltag.AprilTagDetection;
+import com.acmerobotics.dashboard.FtcDashboard;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 @Autonomous(name = "BLUE AUTO")
 public class RightParkCone extends LinearOpMode {
     public void runOpMode() {
+
+
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
         int AprilTagID =7;
 
@@ -59,10 +64,13 @@ public class RightParkCone extends LinearOpMode {
         backDist = hardwareMap.get(DistanceSensor.class, "backDist");
         frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
 
+
         LiftArm lift = new LiftArm(hardwareMap);
         Thread liftThread = new Thread(lift);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+
+
 
         drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(-90)));
 
@@ -81,6 +89,8 @@ public class RightParkCone extends LinearOpMode {
                 .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(-220)))
                 .build();
 
+        RoadRunnerThread RRThread = new RoadRunnerThread(hardwareMap, drive, traj);
+        Thread RoadThread = new Thread(RRThread);
 
         while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
@@ -103,9 +113,12 @@ public class RightParkCone extends LinearOpMode {
 
         }
 
+
+
         waitForStart();
         timer.reset();
         liftThread.start();
+        RoadThread.start();
 
         drive.followTrajectory(traj);
 //        heading1 = Math.toDegrees(drive.getPoseEstimate().getHeading());
@@ -296,5 +309,13 @@ public class RightParkCone extends LinearOpMode {
         }
 
         liftThread.interrupt();
+        RoadThread.interrupt();
+    }
+    public void RRTelemetry(Trajectory traj, SampleMecanumDrive drive){
+        telemetry.addData("trajectory duration", traj.duration());
+        telemetry.addData("trajectory length", traj.getPath().length());
+        telemetry.addData("current Pos", drive.getPoseEstimate());
+        telemetry.addData("current error", drive.getLastError());
+        telemetry.update();
     }
 }
