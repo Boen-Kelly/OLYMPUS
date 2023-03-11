@@ -183,7 +183,7 @@ public class AlignThread implements Runnable{
 
     public double getAngle(boolean usingFrontCam){
         if(usingFrontCam){
-            return 180 - (front.getPosition() * 180) - 50.4;
+            return 180 - (front.getPosition() * 180) - 50.4 + gyroHeading();
         }else{
             return 180 - back.getPosition() * 115;
         }

@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.tests;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -9,6 +11,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.classes.AlignThread;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 
@@ -29,8 +32,10 @@ public class AutoAlignTest extends LinearOpMode {
 //        DcMotor bl, br, fl, fr;
         double distance;
 
-//        FtcDashboard dashboard = FtcDashboard.getInstance();
-//        Telemetry telemetry = dashboard.getTelemetry();
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
@@ -78,6 +83,7 @@ public class AutoAlignTest extends LinearOpMode {
 
         timer.reset();
         while (opModeIsActive()){
+            drive.update();
 
             if(gamepad1.right_bumper){
                 if(toggle1){
@@ -151,6 +157,15 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.addData("AlignTest loop time", timer.time() - lastTime);
             telemetry.addData("AlignThread loop time", aligner.getCycleTime());
             telemetry.update();
+
+            TelemetryPacket packet = new TelemetryPacket();
+
+            packet.fieldOverlay()
+                    .setStroke("red")
+                    .setStrokeWidth(1)
+                    .strokeCircle(drive.getPoseEstimate().getX() + aligner.xDist, drive.getPoseEstimate().getY() + aligner.yDist, 1);
+
+            dashboard.sendTelemetryPacket(packet);
 
             lastTime = timer.time();
         }
