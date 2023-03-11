@@ -156,15 +156,15 @@ public class RightParkCone extends LinearOpMode {
                 pipeline.setPipelines("pole", "pole");
                 pipeline.frontPoleDetector.setColors(true, false, false);
                 pipeline.backPoleDetector.setColors(true, false, false);
-                pipeline.pointCam(true, .4);
+//                pipeline.pointCam(true, .4);
             }else if(gamepad1.b){
                 pipeline.setPipelines("sleeve", "sleeve");
-                pipeline.pointCam(true, .6);
+//                pipeline.pointCam(true, .6);
             }else if(gamepad1.y){
                 pipeline.setPipelines("sleeve", "pole");
                 pipeline.backPoleDetector.setColors(true, false, false);
                 pipeline.frontPoleDetector.setColors(false, false, true);
-                pipeline.pointCam(true, .6);
+//                pipeline.pointCam(true, .6);
             }
 
             if(gamepad1.right_bumper){
@@ -216,7 +216,7 @@ public class RightParkCone extends LinearOpMode {
         pipeline.setPipelines("sleeve", "pole");
         pipeline.backPoleDetector.setColors(true, false, false);
         pipeline.frontPoleDetector.setColors(false, false, true);
-        pipeline.pointCam(true, .6);
+//        pipeline.pointCam(true, .6);
 
         waitForStart();
         timer.reset();
