@@ -34,7 +34,7 @@ public class RRThreadTest extends LinearOpMode{
                 .build();
 
 
-        RoadRunnerThread RRThread = new RoadRunnerThread(drive, traj, new Vector2d(0,0));
+        RoadRunnerThread RRThread = new RoadRunnerThread(drive, traj, new Vector2d(0,0), -3.14/2);
         Thread RoadThread = new Thread(RRThread);
 
         ElapsedTime timer = new ElapsedTime();

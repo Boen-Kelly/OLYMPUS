@@ -25,13 +25,15 @@ public class RoadRunnerThread implements Runnable{
     public Trajectory calculatedTraj;
 
     private Vector2d targetPos;
+    private double targetHeading;
 
     RightParkCone auto = new RightParkCone();
 
-    public RoadRunnerThread(SampleMecanumDrive drive, Trajectory traj, Vector2d targetPos){
+    public RoadRunnerThread(SampleMecanumDrive drive, Trajectory traj, Vector2d targetPos, double targetHeading){
         this.drive = drive;
         this.traj = traj;
         this.targetPos = targetPos;
+        this.targetHeading = targetHeading;
     }
 
     @Override
@@ -44,7 +46,7 @@ public class RoadRunnerThread implements Runnable{
         while(timer.seconds() < traj.duration()){
             dashboardTelemetry.addData("timer", timer.seconds());
         }
-        Pose2d poseWithError = new Pose2d(traj.end().getX() - drive.getLastError().getX(),traj.end().getY() - drive.getLastError().getY(),-3.1415/2);
+        Pose2d poseWithError = new Pose2d(traj.end().getX() + drive.getLastError().getX(),traj.end().getY() + drive.getLastError().getY(),traj.end().getHeading());
 
         calculatedTraj = drive.trajectoryBuilder(poseWithError)
                 .splineToConstantHeading(targetPos,-3.1415/2)
