@@ -22,27 +22,41 @@ public class RoadRunnerThread implements Runnable{
     private Trajectory currentTar;
     private SampleMecanumDrive drive;
     private Trajectory traj;
+    public Trajectory calculatedTraj;
+
+    private Vector2d targetPos;
 
     RightParkCone auto = new RightParkCone();
 
-    public RoadRunnerThread(HardwareMap hardwareMap, SampleMecanumDrive drive, Trajectory traj){
+    public RoadRunnerThread(SampleMecanumDrive drive, Trajectory traj, Vector2d targetPos){
         this.drive = drive;
         this.traj = traj;
+        this.targetPos = targetPos;
     }
 
     @Override
     public void run(){
 
+        ElapsedTime timer = new ElapsedTime();
         FtcDashboard dashboard = FtcDashboard.getInstance();
         Telemetry dashboardTelemetry = dashboard.getTelemetry();
 
-        while (!Thread.interrupted()) {
-            dashboardTelemetry.addData("lastError", drive.getLastError());
-            dashboardTelemetry.addData("Pos", drive.getPoseEstimate());
-            dashboardTelemetry.addData("path Length", traj.getPath().length());
-            dashboardTelemetry.addData("duration", traj.duration());
-            dashboardTelemetry.addData("end Pos", traj.end());
-            dashboardTelemetry.update();
+        while(timer.seconds() < traj.duration()){
+            dashboardTelemetry.addData("timer", timer.seconds());
         }
+        Pose2d poseWithError = new Pose2d(traj.end().getX() - drive.getLastError().getX(),traj.end().getY() - drive.getLastError().getY(),-3.1415/2);
+
+        calculatedTraj = drive.trajectoryBuilder(poseWithError)
+                .splineToConstantHeading(targetPos,-3.1415/2)
+                .build();
+
+
+        dashboardTelemetry.addData("lastError", drive.getLastError());
+        dashboardTelemetry.addData("Pos", drive.getPoseEstimate());
+        dashboardTelemetry.addData("path Length", traj.getPath().length());
+        dashboardTelemetry.addData("duration", traj.duration());
+        dashboardTelemetry.addData("end Pos", traj.end());
+        dashboardTelemetry.update();
+
     }
 }

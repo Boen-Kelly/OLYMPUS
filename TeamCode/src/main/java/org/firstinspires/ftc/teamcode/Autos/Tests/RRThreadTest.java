@@ -34,39 +34,24 @@ public class RRThreadTest extends LinearOpMode{
                 .build();
 
 
-        RoadRunnerThread RRThread = new RoadRunnerThread(hardwareMap, drive, traj);
+        RoadRunnerThread RRThread = new RoadRunnerThread(drive, traj, new Vector2d(0,0));
         Thread RoadThread = new Thread(RRThread);
 
         ElapsedTime timer = new ElapsedTime();
 
         waitForStart();
-        RoadThread.start();
 
         timer.reset();
 
+        RoadThread.start();
         drive.followTrajectory(traj);
         telemetry.addData("Time",timer.seconds());
         telemetry.update();
 
+        drive.followTrajectory(RRThread.calculatedTraj);
+
         RoadThread.interrupt();
 
-        Trajectory traj2 = drive.trajectoryBuilder(drive.getPoseEstimate())
-                .splineToConstantHeading(new Vector2d(-14, 0), Math.toRadians(-90))
-                .build();
-
-
-        RoadRunnerThread RRThread2 = new RoadRunnerThread(hardwareMap, drive, traj2);
-        Thread RoadThread2 = new Thread(RRThread2);
-        RoadThread2.start();
-
-        timer.reset();
-        drive.followTrajectory(traj2);
-
-        telemetry.addData("Time",timer.seconds());
-        telemetry.update();
-
-
-        RoadThread2.interrupt();
 
     }
 }

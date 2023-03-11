@@ -65,7 +65,25 @@ public class RRMidCalc extends LinearOpMode{
                 .build();
         drive.followTrajectory(traj5);
 
+        Trajectory traj6 = drive.trajectoryBuilder(drive.getPoseEstimate())
+                .lineToLinearHeading(new Pose2d(-32, -32, Math.toRadians(90)))
+                .build();
+        drive.followTrajectory(traj6);
+
+        Trajectory traj7 = drive.trajectoryBuilder(drive.getPoseEstimate())
+                .lineToLinearHeading(new Pose2d(-10, 0, Math.toRadians(0)))
+                .build();
+        drive.followTrajectory(traj7);
+
         waitForButton(drive);
+
+        telemetry.addData("EquationError X", traj7.end().getX() - drive.getPoseEstimate().getX());
+        telemetry.addData("EquationError Y", traj7.end().getY() - drive.getPoseEstimate().getY());
+        telemetry.addData("lastError", drive.getLastError());
+
+        telemetry.update();
+
+        sleep(10000);
 
     }
 

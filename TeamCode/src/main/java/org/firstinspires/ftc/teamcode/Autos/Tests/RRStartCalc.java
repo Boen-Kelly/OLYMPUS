@@ -43,6 +43,12 @@ public class RRStartCalc extends LinearOpMode{
         Trajectory traj5 = drive.trajectoryBuilder(new Pose2d(10, -40, Math.toRadians(-90)))
                 .splineToConstantHeading(new Vector2d(-10, -40), Math.toRadians(-90))
                 .build();
+        Trajectory traj6 = drive.trajectoryBuilder(traj5.end())
+                .lineToLinearHeading(new Pose2d(-32, -32, Math.toRadians(90)))
+                .build();
+        Trajectory traj7 = drive.trajectoryBuilder(traj6.end())
+                .lineToLinearHeading(new Pose2d(-10, 0, Math.toRadians(0)))
+                .build();
 
 
         ElapsedTime timer = new ElapsedTime();
@@ -66,6 +72,22 @@ public class RRStartCalc extends LinearOpMode{
 
         drive.followTrajectory(traj5);
 
+        waitForButton(drive);
+
+        drive.followTrajectory(traj6);
+
+        waitForButton(drive);
+
+        drive.followTrajectory(traj7);
+        waitForButton(drive);
+
+        telemetry.addData("EquationError X", traj7.end().getX() - drive.getPoseEstimate().getX());
+        telemetry.addData("EquationError Y", traj7.end().getY() - drive.getPoseEstimate().getY());
+        telemetry.addData("lastError", drive.getLastError());
+
+        telemetry.update();
+        sleep(10000);
+
 
     }
 
@@ -73,6 +95,7 @@ public class RRStartCalc extends LinearOpMode{
         //while(!gamepad1.a && opModeIsActive()){
             //sleep(10);
             telemetry.addData("lastError", drive.getLastError());
+
             telemetry.update();
         //}
     }
