@@ -37,21 +37,21 @@ public class RRThreadTest extends LinearOpMode{
     public void runOpMode() {
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-        TrajectoryBuilder traj2 = drive.trajectoryBuilder(RoadRunnerThread.poseWithError1)
-                .splineToConstantHeading(new Vector2d(-14, 0), Math.toRadians(-90));
-        TrajectoryBuilder traj3 = drive.trajectoryBuilder(RoadRunnerThread.poseWithError1)
-                .splineToConstantHeading(new Vector2d(0, 12), Math.toRadians(-90));
 
         drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(-90)));
 
-        Trajectory traj = drive.trajectoryBuilder(drive.getPoseEstimate())
-                .splineToConstantHeading(new Vector2d(-14, 59.75), Math.toRadians(-90))
+        TrajectorySequence traj = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .lineToConstantHeading(new Vector2d(-32, 64.75))
+                .splineToConstantHeading(new Vector2d(-34, 62.75), Math.toRadians(-90))
+                .lineToLinearHeading(new Pose2d(-34,3, Math.toRadians(90)))
+                .lineToLinearHeading(new Pose2d(-34, 7.5, Math.toRadians(90)))
+                .lineToSplineHeading(new Pose2d(-34,12, Math.toRadians(140)))
                 .build();
 
 
 
 
-        RoadRunnerThread RRThread = new RoadRunnerThread(hardwareMap, drive, traj, traj2,1);
+        RoadRunnerThread RRThread = new RoadRunnerThread(hardwareMap, drive, traj,1);
         Thread RoadThread = new Thread(RRThread);
 
         ElapsedTime timer = new ElapsedTime();
@@ -61,27 +61,21 @@ public class RRThreadTest extends LinearOpMode{
         timer.reset();
 
         RoadThread.start();
-        drive.followTrajectory(traj);
+        RRThread.currentTraj = traj;
+        RRThread.trajNum = 1;
+        drive.followTrajectorySequence(traj);
 
-        RoadRunnerThread RRThread2 = new RoadRunnerThread(hardwareMap,drive, RRThread.calculatedTraj, traj3, 2);
-        Thread RoadThread2 = new Thread(RRThread2);
+        RRThread.currentTraj = RRThread.calculatedTraj;
+        RRThread.trajNum = 2;
+        drive.followTrajectorySequence(RRThread.calculatedTraj);
 
-        RoadThread2.start();
-        drive.followTrajectory(RRThread.calculatedTraj);
+        RRThread.currentTraj = RRThread.calculatedTraj;
+        RRThread.trajNum = 3;
+        drive.followTrajectorySequence(RRThread.calculatedTraj);
+
+        RRThread.currentTraj = RRThread.calculatedTraj;
+        drive.followTrajectorySequence(RRThread.calculatedTraj);
 
         RoadThread.interrupt();
-
-        drive.followTrajectory(RRThread2.calculatedTraj);
-
-        RoadThread2.interrupt();
-
-    }
-    public TrajectoryBuilder traj1Builder1(SampleMecanumDrive drive, Pose2d poseError){
-        return drive.trajectoryBuilder(poseError)
-                .splineToConstantHeading(new Vector2d(-14, 0), Math.toRadians(-90));
-    }
-    public TrajectoryBuilder traj1Builder2(SampleMecanumDrive drive, Pose2d poseError){
-        return drive.trajectoryBuilder(poseError)
-                .splineToConstantHeading(new Vector2d(0, 12), Math.toRadians(-90));
     }
 }
