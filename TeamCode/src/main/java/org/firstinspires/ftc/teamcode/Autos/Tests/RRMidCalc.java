@@ -88,10 +88,10 @@ public class RRMidCalc extends LinearOpMode{
     }
 
     public void waitForButton(SampleMecanumDrive drive){
-        //while(!gamepad1.a && opModeIsActive()){
-            //sleep(10);
+        while(!gamepad1.a && opModeIsActive()){
+            sleep(10);
             telemetry.addData("lastError", drive.getLastError());
             telemetry.update();
-        //}
+        }
     }
 }
