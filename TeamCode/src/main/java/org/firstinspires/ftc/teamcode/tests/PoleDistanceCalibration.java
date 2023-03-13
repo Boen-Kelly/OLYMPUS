@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.tests;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -10,12 +11,16 @@ import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import java.util.ArrayList;
 
 @TeleOp
+@Config
 public class PoleDistanceCalibration extends LinearOpMode {
+    public static double exposure = 25;
+    public static int gain = 1;
+    public static int WB = 5000;
     @Override
     public void runOpMode() throws InterruptedException {
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
 
-        DistanceSensor backDist = hardwareMap.get(DistanceSensor.class, "backDist");
+        DistanceSensor frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
 
         while (pipeline.toString().equals("waiting for start")){
             telemetry.addLine("waiting for OpenCV");
@@ -31,16 +36,16 @@ public class PoleDistanceCalibration extends LinearOpMode {
             telemetry.update();
         }
 
-        double sensorDist = backDist.getDistance(DistanceUnit.INCH);
-        double poleWidth = pipeline.getMaxWidth(false);
+        double sensorDist = frontDist.getDistance(DistanceUnit.INCH);
+        double poleWidth = pipeline.getMaxWidth(true);
         ArrayList<Double> kVals = new ArrayList<>();
         double kValAvg = 0;
         double kValTotal = 0;
         double calculatedDist = 0;
 
         while (opModeIsActive()){
-            sensorDist = backDist.getDistance(DistanceUnit.INCH);
-            poleWidth = pipeline.getMaxWidth(false);
+            sensorDist = frontDist.getDistance(DistanceUnit.INCH);
+            poleWidth = pipeline.getMaxWidth(true);
 
             if(gamepad1.a){
                 kVals.add(sensorDist * poleWidth);
@@ -60,6 +65,8 @@ public class PoleDistanceCalibration extends LinearOpMode {
             }
 
             calculatedDist = kValAvg/poleWidth;
+
+            pipeline.setCamVals(exposure,gain,WB);
 
             telemetry.addData("distance sensor", sensorDist);
             telemetry.addData("pole width", poleWidth);

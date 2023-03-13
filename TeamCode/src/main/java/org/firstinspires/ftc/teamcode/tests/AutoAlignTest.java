@@ -4,9 +4,12 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -20,22 +23,24 @@ import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 @Config
 public class AutoAlignTest extends LinearOpMode {
     ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
-    public static double cameraPoint = .75;
-    public static double exposure = 25;
+    public static double frontPoint = .75;
+    public static double backPoint = .5;
+    public static double exposure = 10;
     public static int gain = 1;
+    public static double distance = 3;
     public static int WB = 5000;
     public static boolean AEPriority = false;
     boolean toggle1 = false;
     double lastTime = 0;
+    double packetSentTime = 0;
 
     public void runOpMode(){
-//        DcMotor bl, br, fl, fr;
-        double distance;
+        DcMotor bl, br, fl, fr;
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
 
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+//        SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+//        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
@@ -52,18 +57,18 @@ public class AutoAlignTest extends LinearOpMode {
         Thread alignerThread = new Thread(aligner);
 
 
-//        bl = hardwareMap.get(DcMotor.class, "bl");
-//        br = hardwareMap.get(DcMotor.class, "br");
-//        fl = hardwareMap.get(DcMotor.class, "fl");
-//        fr = hardwareMap.get(DcMotor.class, "fr");
+        bl = hardwareMap.get(DcMotor.class, "bl");
+        br = hardwareMap.get(DcMotor.class, "br");
+        fl = hardwareMap.get(DcMotor.class, "fl");
+        fr = hardwareMap.get(DcMotor.class, "fr");
 
-//        bl.setDirection(DcMotorSimple.Direction.REVERSE);
-//        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+        fl.setDirection(DcMotorSimple.Direction.REVERSE);
 
-//        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         while(!pipeline.toString().equals("waiting for start")){
             telemetry.addLine("waiting for OpenCV");
@@ -83,67 +88,32 @@ public class AutoAlignTest extends LinearOpMode {
 
         timer.reset();
         while (opModeIsActive()){
-            drive.update();
-
-            if(gamepad1.right_bumper){
-                if(toggle1){
-                    exposure += 10;
-                    toggle1 = false;
-                }
-            }else if(gamepad1.left_bumper){
-                if(toggle1){
-                    exposure -= 10;
-                    toggle1 = false;
-                }
-            }else if(gamepad1.dpad_up){
-                if(toggle1){
-                    gain += 1;
-                    toggle1 = false;
-                }
-            }else if(gamepad1.dpad_down){
-                if(toggle1){
-                    gain -= 1;
-                    toggle1 = false;
-                }
-            }else if(gamepad1.dpad_right){
-                if(toggle1){
-                    WB += 500;
-                    toggle1 = false;
-                }
-            }else if(gamepad1.dpad_left){
-                if(toggle1) {
-                    WB -= 500;
-                    toggle1 = false;
-                }
-            }else{
-                toggle1 = true;
-            }
-
+//            drive.update();
             pipeline.setCamVals(exposure,gain,WB);
 
-//            fl.setPower(pipeline.align(cameraPoint, .1, false));
-//            br.setPower(-pipeline.align(cameraPoint, .1, false));
-//            bl.setPower(pipeline.align(cameraPoint, .1, false));
-//            fr.setPower(-pipeline.align(cameraPoint, .1, false));
-
-//            fl.setPower(pipeline.align(cameraPoint, .3, true));
-//            br.setPower(-pipeline.align(cameraPoint, .3, true));
-//            bl.setPower(pipeline.align(cameraPoint, .3, true));
-//            fr.setPower(-pipeline.align(cameraPoint, .3 , true));
-
-//            pipeline.aimCam();
+            fl.setPower(aligner.rotate + aligner.strafe + aligner.straight);
+            fr.setPower(-aligner.rotate - aligner.strafe + aligner.straight);
+            bl.setPower(aligner.rotate - aligner.strafe + aligner.straight);
+            br.setPower(-aligner.rotate + aligner.strafe + aligner.straight);
 
             if(gamepad1.a){
-                aligner.engageMaster(5,true, 0);
+                aligner.camera.enableCam(true);
+                aligner.engageMaster(distance,true, 0);
             }else if(gamepad1.y || aligner.aligned()){
+                aligner.camera.disableCam(true);
                 aligner.disengageMaster();
+            }else if(gamepad1.x){
+                aligner.camera.enableCam(true);
+            }else if(gamepad1.b){
+                aligner.camera.disableCam(true);
+                aligner.camera.pointCam(frontPoint, backPoint);
             }
 
 //            telemetry.addData("Pipeline says", pipeline);
-//            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
-//            telemetry.addData("angle", aligner.getAngle(true));
-//            telemetry.addData("xDist", (int)aligner.xDist);
-//            telemetry.addData("yDist", (int)aligner.yDist);
+            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
+            telemetry.addData("angle", aligner.camera.getAngle(true));
+            telemetry.addData("xDist", (int)aligner.xDist);
+            telemetry.addData("yDist", (int)aligner.yDist);
 //            telemetry.addData("aligned?", aligner.aligned());
 //            telemetry.addData("gyro angle", aligner.gyroHeading());
 //            telemetry.addData("gyro speed", aligner.gyroAlign(0));
@@ -151,6 +121,8 @@ public class AutoAlignTest extends LinearOpMode {
 //            telemetry.addData("ySpeed", aligner.ySpeed);
 //            telemetry.addData("backDist", aligner.backDist.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("frontDist", aligner.frontDist.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("drive x", drive.getPoseEstimate().getX());
+//            telemetry.addData("drive y", drive.getPoseEstimate().getY());
             telemetry.addData("exposure", exposure);
             telemetry.addData("gain", gain);
             telemetry.addData("WB", WB);
@@ -158,14 +130,14 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.addData("AlignThread loop time", aligner.getCycleTime());
             telemetry.update();
 
-            TelemetryPacket packet = new TelemetryPacket();
-
-            packet.fieldOverlay()
-                    .setStroke("red")
-                    .setStrokeWidth(1)
-                    .strokeCircle(drive.getPoseEstimate().getX() + aligner.xDist, drive.getPoseEstimate().getY() + aligner.yDist, 1);
-
-            dashboard.sendTelemetryPacket(packet);
+//            if((timer.time() - packetSentTime) > 20) {
+                TelemetryPacket packet = new TelemetryPacket();
+                packet.fieldOverlay()
+                        .setFill("goldenrod")
+                        .fillCircle(aligner.yDist, aligner.xDist, 2);
+                dashboard.sendTelemetryPacket(packet);
+                packetSentTime = timer.time();
+//            }
 
             lastTime = timer.time();
         }
