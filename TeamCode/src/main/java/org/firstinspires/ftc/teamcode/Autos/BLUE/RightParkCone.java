@@ -176,10 +176,6 @@ public class RightParkCone extends LinearOpMode {
                 .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(135)))
                 .build();
 
-        //TODO: Fix this problem! There needs to be an auto align thread in here,
-        // in order to set the cameras to a specific heading, so that we can see the
-        // signal sleeve at the beginning of autonomous. There are 4 instances in which this
-        // should be fixed, so make sure to get all of them!
         while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
                 pipeline.setPipelines("pole", "pole");
