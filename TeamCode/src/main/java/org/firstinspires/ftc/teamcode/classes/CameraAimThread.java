@@ -36,7 +36,7 @@ public class CameraAimThread implements Runnable{
         this.pipeline = pipeline;
 
         front.scaleRange(0, .63);
-        back.scaleRange(.48,1);
+        back.scaleRange(.22,.89);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class CameraAimThread implements Runnable{
 
                 backPoint += P + I + D;
 
-                backPoint = Range.clip(backPoint, 0, 1);
+                backPoint = Range.clip(backPoint, .28, 1);
 
                 prevCamAngle = pipeline.frontPoleDetector.getDistance();
 

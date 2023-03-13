@@ -17,6 +17,7 @@ public class ServoCameraCalibration extends LinearOpMode {
         front = hardwareMap.get(Servo.class, "front");
 
         front.scaleRange(0,.63);
+        back.scaleRange(.22, .89);
 
         telemetry.addLine("waiting for start");
         telemetry.update();
@@ -25,9 +26,10 @@ public class ServoCameraCalibration extends LinearOpMode {
 
         while (opModeIsActive()){
             back.setPosition(backPos);
-            front.setPosition(frontPos);
+            front.setPosition(frontPos); //min pos is .28
 
             telemetry.addData("angle", 180 - (front.getPosition() * 180) - 50.4);
+            telemetry.addData("back angle", 180 - (180 * back.getPosition()));
             telemetry.update();
             //.72
         }

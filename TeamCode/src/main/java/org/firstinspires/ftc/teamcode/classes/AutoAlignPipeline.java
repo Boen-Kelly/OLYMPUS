@@ -91,7 +91,7 @@ public class AutoAlignPipeline {
             public void onOpened()
             {
                 backCam.setPipeline(backPoleDetector);
-                backCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+                backCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
             }
 
             @Override

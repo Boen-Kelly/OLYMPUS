@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySequence;
+import org.firstinspires.ftc.teamcode.classes.AlignThread;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.LiftArm;
 
@@ -48,7 +50,13 @@ public class RightParkCone extends LinearOpMode {
 
         boolean toggle1 = false;
 
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+
+        parameters.angleUnit = com.qualcomm.hardware.bosch.BNO055IMU.AngleUnit.DEGREES;
+
         AutoAlignPipeline pipeline = new AutoAlignPipeline(hardwareMap, "Webcam 2");
+        AlignThread aligner = new AlignThread(hardwareMap, pipeline, parameters);
+        Thread alignerThread = new Thread(aligner);
 
         while(!pipeline.toString().equals("waiting for start")){
             telemetry.addLine("waiting for OpenCV");
@@ -148,7 +156,7 @@ public class RightParkCone extends LinearOpMode {
                 .splineToConstantHeading(new Vector2d(-34, 62.75), Math.toRadians(-90))
                 .lineToLinearHeading(new Pose2d(-34,3, Math.toRadians(90)))
                 .lineToLinearHeading(new Pose2d(-34, 7.5, Math.toRadians(90)))
-                .lineToSplineHeading(new Pose2d(-34,12, Math.toRadians(140)))
+                .lineToSplineHeading(new Pose2d(-34,12, Math.toRadians(135)))
                 .build();
 
         //TODO: Fix this problem! There needs to be an auto align thread in here,
@@ -160,15 +168,15 @@ public class RightParkCone extends LinearOpMode {
                 pipeline.setPipelines("pole", "pole");
                 pipeline.frontPoleDetector.setColors(true, false, false);
                 pipeline.backPoleDetector.setColors(true, false, false);
-//                pipeline.pointCam(true, .4);
+                aligner.camera.pointCam(.6, .4);
             }else if(gamepad1.b){
                 pipeline.setPipelines("sleeve", "sleeve");
-//                pipeline.pointCam(true, .6);
+                aligner.camera.pointCam(.6, .6);
             }else if(gamepad1.y){
                 pipeline.setPipelines("sleeve", "pole");
                 pipeline.backPoleDetector.setColors(true, false, false);
                 pipeline.frontPoleDetector.setColors(false, false, true);
-//                pipeline.pointCam(true, .6);
+                aligner.camera.pointCam(.6, .6);
             }
 
             if(gamepad1.right_bumper){
@@ -220,7 +228,7 @@ public class RightParkCone extends LinearOpMode {
         pipeline.setPipelines("sleeve", "pole");
         pipeline.backPoleDetector.setColors(true, false, false);
         pipeline.frontPoleDetector.setColors(false, false, true);
-//        pipeline.pointCam(true, .6);
+        aligner.camera.pointCam(.6, .6);
 
         waitForStart();
         timer.reset();
@@ -230,50 +238,23 @@ public class RightParkCone extends LinearOpMode {
 
         lift.lift(1850, false);
 
-//        pipeline.turnToAlign(.79, false);
+        aligner.camera.enableCam(false);
+        aligner.engageMaster(4, false, 45);
 
-        distanceToPole = backDist.getDistance(DistanceUnit.INCH);
-
-        if(distanceToPole > 40){
-            distanceToPole = 14;
+        double AlignerTime = timer.time();
+        while(!aligner.aligned() || timer.time() - AlignerTime < 3000) {
+            drive.setMotorPowers(
+                    aligner.rotate - aligner.strafe - aligner.straight,
+                    aligner.rotate + aligner.strafe - aligner.straight,
+                    -aligner.rotate - aligner.strafe - aligner.straight,
+                    -aligner.rotate + aligner.strafe - aligner.rotate);
         }
 
-//        telemetry.addData("Distance to pole", distanceToPole);
-//        telemetry.update();
-//        sleep(1000);
         drive.update();
 
-        Trajectory firstDeliver = drive.trajectoryBuilder(drive.getPoseEstimate())
-//                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()) - 180)*10, drive.getPoseEstimate().getHeading()))
-                .back(distanceToPole - 2,
-                        SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(20))
-                .addTemporalMarker(1, () -> {
-                    lift.lift(1650, false);
-                })
-                .build();
-
-        drive.followTrajectory(firstDeliver);
-
         lift.setSlurpPower(-1);
-//        sleep(500);
 
         for(int i = 0; i < 1; i++){
-//            TrajectorySequence pickup = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-//                    .addTemporalMarker(0, () -> {
-//                        lift.lift(0, true);
-//                        lift.setSlurpPower(0);
-//                    })
-//                    .forward(2-distanceToPole)
-//                    .addTemporalMarker(1, () -> {
-//                        pipeline.strafeToAlign(.8, true);
-//                    })
-//                    .addTemporalMarker(2.5, () -> {
-//                        lift.lift(1000,true);
-//                        lift.setSlurpPower(1);
-//                    })
-//                    .build();
-
             Trajectory pickupcone = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
                         lift.drop();
@@ -285,28 +266,19 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectory(pickupcone);
 
-//            pipeline.turnToAlign(.525, true);
+            aligner.camera.enableCam(true);
+            aligner.engageMaster(4, true, 90);
 
-//            sleep(500);
-            distanceToCone = frontDist.getDistance(DistanceUnit.INCH);
-
-            if(distanceToCone > 40){
-                distanceToCone = 26;
+            AlignerTime = timer.time();
+            while(!aligner.aligned() || timer.time() - AlignerTime < 3000) {
+                drive.setMotorPowers(
+                        aligner.rotate + aligner.strafe + aligner.straight,
+                        aligner.rotate - aligner.strafe + aligner.straight,
+                        -aligner.rotate + aligner.strafe + aligner.straight,
+                        -aligner.rotate - aligner.strafe + aligner.rotate);
             }
 
-//            telemetry.addData("dist", distanceToCone);
-//            telemetry.update();
             drive.update();
-
-            Trajectory collect = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .addTemporalMarker(0, () -> {
-                        lift.lift(1000, true);
-                        lift.setSlurpPower(1);
-                    })
-                    .forward(distanceToCone-2)
-                    .build();
-
-            drive.followTrajectory(collect);
 
             lift.drop(350);
             sleep(500);
@@ -318,13 +290,6 @@ public class RightParkCone extends LinearOpMode {
                     })
                     .lineToLinearHeading(new Pose2d(-36,14, Math.toRadians(135)))
                     .build();
-//            TrajectorySequence deliver = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-//                    .addTemporalMarker(.5, () -> {
-//                        lift.drop();
-//                    })
-//                    .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
-//                    .turn(Math.toRadians(-45))
-//                    .build();
 
             drive.followTrajectory(deliver);
 
@@ -332,26 +297,19 @@ public class RightParkCone extends LinearOpMode {
             telemetry.addLine("aligning");
             telemetry.update();
 
-//            pipeline.turnToAlign(.77, false);
-//            sleep(500);
-            distanceToPole = backDist.getDistance(DistanceUnit.INCH);
+            aligner.camera.enableCam(false);
+            aligner.engageMaster(4, false, 45);
 
-            if(distanceToPole > 40){
-                distanceToPole = 14;
+            AlignerTime = timer.time();
+            while(!aligner.aligned() || timer.time() - AlignerTime < 3000) {
+                drive.setMotorPowers(
+                        aligner.rotate - aligner.strafe - aligner.straight,
+                        aligner.rotate + aligner.strafe - aligner.straight,
+                        -aligner.rotate - aligner.strafe - aligner.straight,
+                        -aligner.rotate + aligner.strafe - aligner.rotate);
             }
 
             drive.update();
-
-            Trajectory backup = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .addTemporalMarker(0, () -> {
-                        lift.lift(1850, false);
-                    })
-                    .back(distanceToPole-2,
-                            SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                            SampleMecanumDrive.getAccelerationConstraint(20))
-                    .build();
-
-            drive.followTrajectory(backup);
 
             lift.setSlurpPower(-1);
         }
