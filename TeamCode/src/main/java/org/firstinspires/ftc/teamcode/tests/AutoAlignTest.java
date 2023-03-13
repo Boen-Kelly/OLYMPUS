@@ -91,21 +91,21 @@ public class AutoAlignTest extends LinearOpMode {
 //            drive.update();
             pipeline.setCamVals(exposure,gain,WB);
 
-            fl.setPower(aligner.rotate + aligner.strafe + aligner.straight);
-            fr.setPower(-aligner.rotate - aligner.strafe + aligner.straight);
-            bl.setPower(aligner.rotate - aligner.strafe + aligner.straight);
-            br.setPower(-aligner.rotate + aligner.strafe + aligner.straight);
+            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
 
             if(gamepad1.a){
-                aligner.camera.enableCam(true);
-                aligner.engageMaster(distance,true, 0);
+                aligner.camera.enableCam(false);
+                aligner.engageMaster(distance,false, 45);
             }else if(gamepad1.y || aligner.aligned()){
-                aligner.camera.disableCam(true);
+                aligner.camera.disableCam(false);
                 aligner.disengageMaster();
             }else if(gamepad1.x){
-                aligner.camera.enableCam(true);
+                aligner.camera.enableCam(false);
             }else if(gamepad1.b){
-                aligner.camera.disableCam(true);
+                aligner.camera.disableCam(false);
                 aligner.camera.pointCam(frontPoint, backPoint);
             }
 

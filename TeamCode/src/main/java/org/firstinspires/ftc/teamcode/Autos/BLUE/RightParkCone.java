@@ -7,6 +7,9 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -30,9 +33,13 @@ import java.util.concurrent.TimeUnit;
 //-2.91
 //-31.04
 //3.65
-@Autonomous(name = "BLUE AUTO")
+@TeleOp(name = "BLUE AUTO")
 @Config
 public class RightParkCone extends LinearOpMode {
+
+    public static double exposure = 10;
+    public static int gain = 25;
+    public static int WB = 6000;
     public void runOpMode() {
         AutoAlignPipeline.DuckPos sleevePos = AutoAlignPipeline.DuckPos.ONE;
         int AprilTagID =7;
@@ -41,10 +48,6 @@ public class RightParkCone extends LinearOpMode {
         int left = 6;
         int middle = 7;
         int right = 8;
-
-        double exposure = 25;
-        int gain = 1;
-        int WB = 5000;
 
         double distanceToPole = 0, distanceToCone = 0;
 
@@ -70,11 +73,24 @@ public class RightParkCone extends LinearOpMode {
 
         DistanceSensor backDist, frontDist;
         Servo lilArmL, lilArmR;
+        DcMotor bl, br, fl, fr;
 
+        bl = hardwareMap.get(DcMotor.class, "bl");
+        br = hardwareMap.get(DcMotor.class, "br");
+        fl = hardwareMap.get(DcMotor.class, "fl");
+        fr = hardwareMap.get(DcMotor.class, "fr");
         backDist = hardwareMap.get(DistanceSensor.class, "backDist");
         frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
         lilArmL = hardwareMap.get(Servo.class, "lilArm1");
         lilArmR = hardwareMap.get(Servo.class, "lilArm2");
+
+        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
         LiftArm lift = new LiftArm(hardwareMap);
@@ -152,11 +168,12 @@ public class RightParkCone extends LinearOpMode {
                     lift.setSlurpPower(1);
                     pipeline.setPipelines("pole", "pole");
                 })
-                .lineToConstantHeading(new Vector2d(-32, 64.75))
-                .splineToConstantHeading(new Vector2d(-34, 62.75), Math.toRadians(-90))
-                .lineToLinearHeading(new Pose2d(-34,3, Math.toRadians(90)))
-                .lineToLinearHeading(new Pose2d(-34, 7.5, Math.toRadians(90)))
-                .lineToSplineHeading(new Pose2d(-34,12, Math.toRadians(135)))
+                .lineToConstantHeading(new Vector2d(-34, 64.75))
+                .splineToConstantHeading(new Vector2d(-36, 62.75), Math.toRadians(-90))
+//                .lineToLinearHeading(new Pose2d(-34,3, Math.toRadians(90)))
+//                .lineToLinearHeading(new Pose2d(-34, 7.5, Math.toRadians(90)))
+                .lineToLinearHeading(new Pose2d(-36,24, Math.toRadians(90)))
+                .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(135)))
                 .build();
 
         //TODO: Fix this problem! There needs to be an auto align thread in here,
@@ -233,27 +250,47 @@ public class RightParkCone extends LinearOpMode {
         waitForStart();
         timer.reset();
         liftThread.start();
+        alignerThread.start();
 
         drive.followTrajectorySequence(traj);
 
-        lift.lift(1850, false);
+//        lift.lift(1850, false);
 
         aligner.camera.enableCam(false);
-        aligner.engageMaster(4, false, 45);
+        aligner.engageMaster(3, false, 45);
 
-        double AlignerTime = timer.time();
-        while(!aligner.aligned() || timer.time() - AlignerTime < 3000) {
-            drive.setMotorPowers(
-                    aligner.rotate - aligner.strafe - aligner.straight,
-                    aligner.rotate + aligner.strafe - aligner.straight,
-                    -aligner.rotate - aligner.strafe - aligner.straight,
-                    -aligner.rotate + aligner.strafe - aligner.rotate);
+        double AlignerTime = timer.time(TimeUnit.MILLISECONDS);
+        while(!aligner.aligned()) {
+            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+
+            telemetry.addData("cam angle", aligner.camera.getAngle(false));
+            telemetry.addData("robot angle", aligner.gyroHeading());
+            telemetry.addData("xDist", (int)aligner.xDist);
+            telemetry.addData("yDist", (int)aligner.yDist);
+            telemetry.addData("back dist", aligner.backDist.getDistance(DistanceUnit.INCH));
+            telemetry.addData("aligned?", aligner.aligned());
+            telemetry.update();
         }
+
+        telemetry.addLine("DONE!");
+        telemetry.update();
+
+        aligner.camera.disableCam(false);
+        aligner.disengageMaster();
+
+        fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+        fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+        bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+        br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
 
         drive.update();
 
         lift.setSlurpPower(-1);
 
+        /**
         for(int i = 0; i < 1; i++){
             Trajectory pickupcone = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
@@ -313,7 +350,9 @@ public class RightParkCone extends LinearOpMode {
 
             lift.setSlurpPower(-1);
         }
+         */
 
+        /**
         if(AprilTagID == left) {
             Trajectory parkL = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(1, () -> {
@@ -352,6 +391,7 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectorySequence(park);
         }
+         */
 
         double time = timer.time(TimeUnit.SECONDS);
 
@@ -382,5 +422,6 @@ public class RightParkCone extends LinearOpMode {
         }
 
         liftThread.interrupt();
+        alignerThread.interrupt();
     }
 }

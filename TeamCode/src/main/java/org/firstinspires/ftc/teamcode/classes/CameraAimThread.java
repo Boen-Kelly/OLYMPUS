@@ -24,9 +24,9 @@ public class CameraAimThread implements Runnable{
     public static double kPFrontCam = .004;
     public static double kIFrontCam = 0;
     public static double kDFrontCam = 0.0000025;
-    public static double kPBackCam = 0;
+    public static double kPBackCam = 0.0015;
     public static double kIBackCam = 0;
-    public static double kDBackCam = 0;
+    public static double kDBackCam = .00000003;
     public static double frontPoint = .6;
     public static double backPoint = .5;
 
