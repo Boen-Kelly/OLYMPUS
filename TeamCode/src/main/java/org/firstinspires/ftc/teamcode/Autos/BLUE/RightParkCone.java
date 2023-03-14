@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
@@ -52,6 +53,10 @@ public class RightParkCone extends LinearOpMode {
         double distanceToPole = 0, distanceToCone = 0;
 
         boolean toggle1 = false;
+
+        double straight = 0, strafe = 0, rotate = 0;
+        Pose2d startingPose;
+        Pose2d currentPose = new Pose2d();
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
@@ -176,6 +181,14 @@ public class RightParkCone extends LinearOpMode {
                 .lineToSplineHeading(new Pose2d(-36,12, Math.toRadians(135)))
                 .build();
 
+        alignerThread.start();
+
+        while(!alignerThread.isAlive()){
+            telemetry.addLine("Creting aligner thread");
+            telemetry.update();
+        }
+
+
         while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
                 pipeline.setPipelines("pole", "pole");
@@ -194,22 +207,22 @@ public class RightParkCone extends LinearOpMode {
 
             if(gamepad1.right_bumper){
                 if(toggle1){
-                    exposure += 10;
+                    exposure += 5;
                     toggle1 = false;
                 }
             }else if(gamepad1.left_bumper){
                 if(toggle1){
-                    exposure -= 10;
+                    exposure -= 5;
                     toggle1 = false;
                 }
             }else if(gamepad1.dpad_up){
                 if(toggle1){
-                    gain += 1;
+                    gain += 10;
                     toggle1 = false;
                 }
             }else if(gamepad1.dpad_down){
                 if(toggle1){
-                    gain -= 1;
+                    gain -= 10;
                     toggle1 = false;
                 }
             }else if(gamepad1.dpad_right){
@@ -226,6 +239,10 @@ public class RightParkCone extends LinearOpMode {
                 toggle1 = true;
             }
 
+            exposure = Math.max(1,exposure);
+            gain = Math.max(1, gain);
+            WB = Math.max(1, WB);
+
             pipeline.setCamVals(exposure,gain,WB);
 
             AprilTagID = pipeline.AprilTagID(true);
@@ -241,26 +258,51 @@ public class RightParkCone extends LinearOpMode {
         pipeline.setPipelines("sleeve", "pole");
         pipeline.backPoleDetector.setColors(true, false, false);
         pipeline.frontPoleDetector.setColors(false, false, true);
-        aligner.camera.pointCam(.6, .6);
+        aligner.camera.pointCam(.6, .75);
 
         waitForStart();
         timer.reset();
         liftThread.start();
-        alignerThread.start();
 
         drive.followTrajectorySequence(traj);
 
 //        lift.lift(1850, false);
 
         aligner.camera.enableCam(false);
-        aligner.engageMaster(3, false, 45);
+        aligner.engageMaster(0, false, 45);
+
+        startingPose = drive.getPoseEstimate();
 
         double AlignerTime = timer.time(TimeUnit.MILLISECONDS);
+        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         while(!aligner.aligned()) {
-            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
-            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
-            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
-            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+            currentPose = drive.getPoseEstimate();
+
+//            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+//            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+//            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+//            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+
+            if(Math.abs(startingPose.getX() - currentPose.getX()) > 10){
+                strafe = 0;
+            }else{
+                strafe = aligner.strafe;
+            }
+
+            if(Math.abs(startingPose.getY() - currentPose.getY()) > 20){
+                straight = 0;
+                break;
+            }else{
+                straight = aligner.straight;
+            }
+
+            drive.setWeightedDrivePower(
+                    new Pose2d(
+                            -straight,
+                            strafe,
+                            -aligner.rotate
+                    )
+            );
 
             telemetry.addData("cam angle", aligner.camera.getAngle(false));
             telemetry.addData("robot angle", aligner.gyroHeading());
@@ -268,7 +310,10 @@ public class RightParkCone extends LinearOpMode {
             telemetry.addData("yDist", (int)aligner.yDist);
             telemetry.addData("back dist", aligner.backDist.getDistance(DistanceUnit.INCH));
             telemetry.addData("aligned?", aligner.aligned());
+            telemetry.addData("drive x", currentPose.getX());
+            telemetry.addData("drive y", currentPose.getY());
             telemetry.update();
+            drive.update();
         }
 
         telemetry.addLine("DONE!");
@@ -277,10 +322,10 @@ public class RightParkCone extends LinearOpMode {
         aligner.camera.disableCam(false);
         aligner.disengageMaster();
 
-        fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
-        fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
-        bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
-        br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+        fl.setPower(0);
+        fr.setPower(0);
+        bl.setPower(0);
+        br.setPower(0);
 
         drive.update();
 
@@ -414,6 +459,9 @@ public class RightParkCone extends LinearOpMode {
 
         while(opModeIsActive()){
             telemetry.addData("time", time);
+            telemetry.addData("y movement", Math.abs(startingPose.getY() - currentPose.getY()));
+            telemetry.addData("Xdist", aligner.xDist);
+            telemetry.addData("Ydist", aligner.yDist);
             telemetry.update();
         }
 

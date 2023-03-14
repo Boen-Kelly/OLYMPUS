@@ -39,8 +39,8 @@ public class AutoAlignTest extends LinearOpMode {
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
 
-//        SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-//        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
@@ -91,10 +91,18 @@ public class AutoAlignTest extends LinearOpMode {
 //            drive.update();
             pipeline.setCamVals(exposure,gain,WB);
 
-            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
-            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
-            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
-            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+//            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+//            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+//            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+//            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+
+            drive.setWeightedDrivePower(
+                    new Pose2d(
+                            -aligner.straight,
+                            aligner.strafe,
+                            -aligner.rotate
+                    )
+            );
 
             if(gamepad1.a){
                 aligner.camera.enableCam(false);
@@ -110,15 +118,12 @@ public class AutoAlignTest extends LinearOpMode {
             }
 
 //            telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("calculated dist", aligner.getRobotDistance(true));
-            telemetry.addData("angle", aligner.camera.getAngle(true));
+            telemetry.addData("calculated dist", aligner.getRobotDistance(false));
+            telemetry.addData("angle", aligner.camera.getAngle(false));
             telemetry.addData("xDist", (int)aligner.xDist);
             telemetry.addData("yDist", (int)aligner.yDist);
 //            telemetry.addData("aligned?", aligner.aligned());
 //            telemetry.addData("gyro angle", aligner.gyroHeading());
-//            telemetry.addData("gyro speed", aligner.gyroAlign(0));
-//            telemetry.addData("xSpeed", aligner.xSpeed);
-//            telemetry.addData("ySpeed", aligner.ySpeed);
 //            telemetry.addData("backDist", aligner.backDist.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("frontDist", aligner.frontDist.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("drive x", drive.getPoseEstimate().getX());
@@ -128,7 +133,12 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.addData("WB", WB);
             telemetry.addData("AlignTest loop time", timer.time() - lastTime);
             telemetry.addData("AlignThread loop time", aligner.getCycleTime());
+            telemetry.addData("straight", aligner.straight);
+            telemetry.addData("strafe", aligner.strafe);
+            telemetry.addData("rotate", aligner.rotate);
             telemetry.update();
+
+            drive.update();
 
 //            if((timer.time() - packetSentTime) > 20) {
                 TelemetryPacket packet = new TelemetryPacket();

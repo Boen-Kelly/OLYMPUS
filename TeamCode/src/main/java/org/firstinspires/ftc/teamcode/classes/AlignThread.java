@@ -26,19 +26,20 @@ public class AlignThread implements Runnable{
     public static double kDAngle = 0;
     public static double kPY = .01;
     public static double kPYDist = 0.035;
-    public static double kPX = .025;
+    public static double kPX = .05;
     public static double maxAngleSpeed = .3;
     public static double xMaxSpeed = 1;
     public static double yMaxSpeed = .5;
     public static double frontPoint = .84, backPoint = .8;
     public final double FRONT_CAM_X_OFFSET = -5.75;
     public final double FRONT_CAM_Y_OFFSET = -5.75;
-    public final double BACK_CAM_X_OFFSET = -5.75;
-    public final double BACK_CAM_Y_OFFSET = 5.75;
+    public static double BACK_CAM_X_OFFSET = -.75;
+    public static double BACK_CAM_Y_OFFSET = 0;
     public double xDist = 0, yDist = 0;
     double angleError = 0, lastAngleError = 0;
     double I = 0;
     public double straight = 0, strafe = 0, rotate = 0;
+    double prevStraight = 0, prevStrafe = 0, prevRotate = 0;
     public double xSpeed = 0, ySpeed = 0;
     double startTime = 0;
 
@@ -93,10 +94,10 @@ public class AlignThread implements Runnable{
             if(masterEngaged) {
                 xSpeed = xDist * kPX;
 
-                strafe = Range.clip(xSpeed, -xMaxSpeed, xMaxSpeed);
+                strafe = (.9 * Range.clip(xSpeed, -xMaxSpeed, xMaxSpeed)) + (.1 * prevStrafe);
 
-                straight = yAlign(distanceToTarget,usingFrontCam);
-                rotate = gyroAlign(robotHeading);
+                straight = (.9 * yAlign(distanceToTarget,usingFrontCam)) + (.1 * prevStraight);
+                rotate = ( .9 * gyroAlign(robotHeading)) + (.1 * prevRotate);
 
 //                if(usingFrontCam) {
 //                    fl.setPower(gyroAlign(robotHeading) + xSpeed + yAlign(distanceToTarget, usingFrontCam));
@@ -110,6 +111,9 @@ public class AlignThread implements Runnable{
 //                    br.setPower(-gyroAlign(robotHeading) - xSpeed - yAlign(distanceToTarget, usingFrontCam));
 //                }
 //                masterEngaged = !aligned();
+                prevStraight = straight;
+                prevStrafe = strafe;
+                prevRotate = rotate;
             }else{
                 straight = 0;
                 strafe = 0;
@@ -137,10 +141,20 @@ public class AlignThread implements Runnable{
 
         if(usingFrontCam) {
             xDist = (r * Math.cos(Math.toRadians(angle))) - FRONT_CAM_X_OFFSET;
-            yDist = (r * Math.sin(Math.toRadians(angle))) - FRONT_CAM_Y_OFFSET - distance;
+
+            if(frontDist.getDistance(DistanceUnit.INCH) > 150) {
+                yDist = (r * Math.sin(Math.toRadians(angle))) - FRONT_CAM_Y_OFFSET - distance;
+            }else{
+                yDist = frontDist.getDistance(DistanceUnit.INCH) - distance;
+            }
         }else {
             xDist = (r * Math.cos(Math.toRadians(angle))) - BACK_CAM_X_OFFSET;
-            yDist = (r * Math.sin(Math.toRadians(angle))) - BACK_CAM_Y_OFFSET - distance;
+
+            if(backDist.getDistance(DistanceUnit.INCH) > 150) {
+                yDist = (r * Math.sin(Math.toRadians(angle))) - BACK_CAM_Y_OFFSET - distance;
+            }else{
+                yDist = backDist.getDistance(DistanceUnit.INCH)  - distance;
+            }
         }
     }
 
@@ -220,19 +234,7 @@ public class AlignThread implements Runnable{
     }
 
     public double yAlign(double distance, boolean usingFrontCam){
-        if(usingFrontCam){
-            if(frontDist.getDistance(DistanceUnit.INCH) > 200){
-                ySpeed = yDist * kPY;
-            }else{
-                ySpeed = (frontDist.getDistance(DistanceUnit.INCH) - distance) * kPYDist;
-            }
-        }else{
-            if(backDist.getDistance(DistanceUnit.INCH) > 200){
-                ySpeed = yDist * kPY;
-            }else{
-                ySpeed = (backDist.getDistance(DistanceUnit.INCH) - distance) * kPYDist;
-            }
-        }
+        ySpeed = yDist * kPY;
         ySpeed = Range.clip(ySpeed, -yMaxSpeed, yMaxSpeed);
         return ySpeed;
     }
