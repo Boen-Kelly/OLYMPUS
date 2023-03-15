@@ -133,6 +133,7 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.addData("WB", WB);
             telemetry.addData("AlignTest loop time", timer.time() - lastTime);
             telemetry.addData("AlignThread loop time", aligner.getCycleTime());
+            telemetry.addData("camera aim thread time", aligner.camera.deltaTime());
             telemetry.addData("straight", aligner.straight);
             telemetry.addData("strafe", aligner.strafe);
             telemetry.addData("rotate", aligner.rotate);

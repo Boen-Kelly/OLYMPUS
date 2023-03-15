@@ -129,6 +129,7 @@ public class RightParkCone extends LinearOpMode {
         lilArmR.setPosition(.8);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+        drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         drive.setPoseEstimate(new Pose2d(-31.425,64.75, Math.toRadians(90)));
 
@@ -184,7 +185,7 @@ public class RightParkCone extends LinearOpMode {
         alignerThread.start();
 
         while(!alignerThread.isAlive()){
-            telemetry.addLine("Creting aligner thread");
+            telemetry.addLine("Creating aligner thread");
             telemetry.update();
         }
 

@@ -33,7 +33,7 @@ public class AlignThread implements Runnable{
     public static double frontPoint = .84, backPoint = .8;
     public final double FRONT_CAM_X_OFFSET = -5.75;
     public final double FRONT_CAM_Y_OFFSET = -5.75;
-    public static double BACK_CAM_X_OFFSET = -.75;
+    public static double BACK_CAM_X_OFFSET = 5.75;
     public static double BACK_CAM_Y_OFFSET = 0;
     public double xDist = 0, yDist = 0;
     double angleError = 0, lastAngleError = 0;

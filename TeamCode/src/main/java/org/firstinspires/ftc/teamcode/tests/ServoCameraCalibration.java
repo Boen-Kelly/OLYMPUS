@@ -25,8 +25,8 @@ public class ServoCameraCalibration extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()){
-            back.setPosition(backPos);
-            front.setPosition(frontPos); //min pos is .28
+            back.setPosition(backPos); //min pos is .28
+            front.setPosition(frontPos);
 
             telemetry.addData("angle", 180 - (front.getPosition() * 180) - 50.4);
             telemetry.addData("back angle", 180 - (180 * back.getPosition()));
