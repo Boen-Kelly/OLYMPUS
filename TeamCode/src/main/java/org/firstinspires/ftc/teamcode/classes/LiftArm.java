@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class LiftArm implements Runnable{
+public class LiftArm{
     private DcMotor lift1, lift2, arm;
     private CRServo slurper;
 
@@ -75,8 +75,20 @@ public class LiftArm implements Runnable{
     }
 
     public void lift (int height, boolean armUp){
-        this.armUp = armUp;
-        this.height = height;
+        if(armUp){
+            arm.setTargetPosition(-1310);
+            arm.setPower(1);
+            while(arm.getCurrentPosition() > -150){
+
+            }
+        }else{
+            arm.setTargetPosition(0);
+            arm.setPower(1);
+        }
+        lift1.setTargetPosition(height);
+        lift2.setTargetPosition(lift1.getTargetPosition());
+        lift1.setPower(1);
+        lift2.setPower(lift1.getPower());
     }
 
     public void setSlurpPower(double power){

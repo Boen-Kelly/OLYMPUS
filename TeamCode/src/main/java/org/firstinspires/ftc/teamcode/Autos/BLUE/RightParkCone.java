@@ -100,7 +100,6 @@ public class RightParkCone extends LinearOpMode {
 
 
         LiftArm lift = new LiftArm(hardwareMap);
-        Thread liftThread = new Thread(lift);
 
         String[] camData = new String[3];
         int c = 0;
@@ -263,14 +262,13 @@ public class RightParkCone extends LinearOpMode {
 
         waitForStart();
         timer.reset();
-        liftThread.start();
 
         drive.followTrajectorySequence(traj);
 
         lift.lift(1850, true);
 
         aligner.camera.enableCam(false);
-        aligner.engageMaster(0, false, 135);
+        aligner.engageMaster(1, false, 135, true);
 
         startingPose = drive.getPoseEstimate();
 
@@ -335,25 +333,29 @@ public class RightParkCone extends LinearOpMode {
 
         drive.update();
 
+        lift.lift(1650, true);
+
         lift.setSlurpPower(-1);
 
 
         for(int i = 0; i < 1; i++) {
             Trajectory pickupcone = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .addTemporalMarker(.5, () -> {
+                    .addTemporalMarker(0, () -> {
                         lift.lift(0, false);
                         lift.setSlurpPower(0);
                     })
-                    .forward(10)
-                    .splineTo(new Vector2d(-40, 14), Math.toRadians(180))
+                    .forward(6)
+                    .splineTo(new Vector2d(-40, 12), Math.toRadians(180))
                     .build();
 
             drive.followTrajectory(pickupcone);
 
-            lift.lift(1000, false);
+            lift.lift(1000, true);
+
+            aligner.camera.pointCam(.5, .6);
 
             aligner.camera.enableCam(true);
-            aligner.engageMaster(0, true, 180);
+            aligner.engageMaster(0, true, 180, false);
 
             startingPose = drive.getPoseEstimate();
 
@@ -362,12 +364,12 @@ public class RightParkCone extends LinearOpMode {
             while (!aligner.aligned()) {
                 aligner.updateHardware(Math.toDegrees(drive.getPoseEstimate().getHeading()), frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
 
-                currentPose = drive.getPoseEstimate();
+//                currentPose = drive.getPoseEstimate();
 
-//            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
-//            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
-//            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
-//            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+            fl.setPower(aligner.rotate + aligner.strafe + aligner.straight);
+            fr.setPower(-aligner.rotate - aligner.strafe + aligner.straight);
+            bl.setPower(aligner.rotate - aligner.strafe + aligner.straight);
+            br.setPower(-aligner.rotate + aligner.strafe + aligner.straight);
 
 //                if(Math.abs(startingPose.getX() - currentPose.getX()) > 10){
 //                    strafe = 0;
@@ -382,13 +384,13 @@ public class RightParkCone extends LinearOpMode {
 //                    straight = aligner.straight;
 //                }
 
-                drive.setWeightedDrivePower(
-                        new Pose2d(
-                                straight,
-                                -strafe,
-                                -aligner.rotate
-                        )
-                );
+//                drive.setWeightedDrivePower(
+//                        new Pose2d(
+//                                straight,
+//                                -strafe,
+//                                -aligner.rotate
+//                        )
+//                );
 
 //            telemetry.addData("cam angle", aligner.camera.getAngle(false));
 //            telemetry.addData("robot angle", Math.toDegrees(drive.getPoseEstimate().getHeading()));
@@ -430,7 +432,7 @@ public class RightParkCone extends LinearOpMode {
             drive.followTrajectory(deliver);
 
             aligner.camera.enableCam(false);
-            aligner.engageMaster(0, false, 135);
+            aligner.engageMaster(0, false, 135, true);
 
             lift.lift(1850, true);
 

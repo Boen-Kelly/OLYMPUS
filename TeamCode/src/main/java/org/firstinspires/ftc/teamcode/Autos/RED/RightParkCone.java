@@ -70,7 +70,6 @@ public class RightParkCone extends LinearOpMode {
 
 
         LiftArm lift = new LiftArm(hardwareMap);
-        Thread liftThread = new Thread(lift);
 
         String[] camData = new String[3];
         int c = 0;
@@ -208,7 +207,6 @@ public class RightParkCone extends LinearOpMode {
 
         waitForStart();
         timer.reset();
-        liftThread.start();
 
         drive.followTrajectory(traj);
 
@@ -404,6 +402,5 @@ public class RightParkCone extends LinearOpMode {
             telemetry.update();
         }
 
-        liftThread.interrupt();
     }
 }

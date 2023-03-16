@@ -29,8 +29,8 @@ public class PoleDistanceCalibration extends LinearOpMode {
 
         while(!opModeIsActive() && !isStopRequested()){
             pipeline.setPipelines("pole", "pole");
-            pipeline.frontPoleDetector.setColors(true, false, false);
-            pipeline.backPoleDetector.setColors(true, false, false);
+            pipeline.frontPoleDetector.setColors(false, false, true);
+            pipeline.backPoleDetector.setColors(false, false, true);
 
             telemetry.addLine("Waiting for start");
             telemetry.update();

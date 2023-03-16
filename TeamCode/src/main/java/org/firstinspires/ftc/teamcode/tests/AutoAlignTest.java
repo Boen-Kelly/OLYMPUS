@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -34,8 +35,11 @@ public class AutoAlignTest extends LinearOpMode {
     double lastTime = 0;
     double packetSentTime = 0;
 
+    double deltaAngle = 0, angle = 0, globalAngle = 0, lastAngle = 0;
+
     public void runOpMode(){
         DcMotor bl, br, fl, fr;
+        DistanceSensor frontDist, backDist;
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
 
@@ -61,6 +65,11 @@ public class AutoAlignTest extends LinearOpMode {
         br = hardwareMap.get(DcMotor.class, "br");
         fl = hardwareMap.get(DcMotor.class, "fl");
         fr = hardwareMap.get(DcMotor.class, "fr");
+        frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
+        backDist = hardwareMap.get(DistanceSensor.class, "backDist");
+        BNO055IMU imu = hardwareMap.get(BNO055IMU.class, "imu");
+
+        imu.initialize(parameters);
 
         bl.setDirection(DcMotorSimple.Direction.REVERSE);
         fl.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -79,8 +88,8 @@ public class AutoAlignTest extends LinearOpMode {
 
         while(!isStarted() && !isStopRequested()) {
             pipeline.setPipelines("pole", "pole");
-            pipeline.frontPoleDetector.setColors(true, false, false);
-            pipeline.backPoleDetector.setColors(true, false, false);
+            pipeline.frontPoleDetector.setColors(false, false, true);
+            pipeline.backPoleDetector.setColors(false, false, true);
 
             telemetry.addLine("Waiting for start");
             telemetry.update();
@@ -88,38 +97,52 @@ public class AutoAlignTest extends LinearOpMode {
 
         timer.reset();
         while (opModeIsActive()){
-//            drive.update();
+            drive.update();
             pipeline.setCamVals(exposure,gain,WB);
 
-//            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
-//            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
-//            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
-//            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+            angle = imu.getAngularOrientation().firstAngle;
 
-            drive.setWeightedDrivePower(
-                    new Pose2d(
-                            -aligner.straight,
-                            aligner.strafe,
-                            -aligner.rotate
-                    )
-            );
+            deltaAngle = angle - lastAngle;
+
+            if(deltaAngle > 180){
+                deltaAngle -= 360;
+            }else if(deltaAngle < -180){
+                deltaAngle += 360;
+            }
+
+            globalAngle += deltaAngle;
+
+            aligner.updateHardware(globalAngle,frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
+
+            fl.setPower(aligner.rotate + aligner.strafe + aligner.straight);
+            fr.setPower(-aligner.rotate - aligner.strafe + aligner.straight);
+            bl.setPower(aligner.rotate - aligner.strafe + aligner.straight);
+            br.setPower(-aligner.rotate + aligner.strafe + aligner.straight);
+
+//            drive.setWeightedDrivePower(
+//                    new Pose2d(
+//                            -aligner.straight,
+//                            aligner.strafe,
+//                            -aligner.rotate
+//                    )
+//            );
 
             if(gamepad1.a){
-                aligner.camera.enableCam(false);
-                aligner.engageMaster(distance,false, 45);
+                aligner.camera.enableCam(true);
+                aligner.engageMaster(distance,true, 0, false);
             }else if(gamepad1.y || aligner.aligned()){
-                aligner.camera.disableCam(false);
+                aligner.camera.disableCam(true);
                 aligner.disengageMaster();
             }else if(gamepad1.x){
-                aligner.camera.enableCam(false);
+                aligner.camera.enableCam(true);
             }else if(gamepad1.b){
-                aligner.camera.disableCam(false);
+                aligner.camera.disableCam(true);
                 aligner.camera.pointCam(frontPoint, backPoint);
             }
 
 //            telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("calculated dist", aligner.getRobotDistance(false));
-            telemetry.addData("angle", aligner.camera.getAngle(false));
+            telemetry.addData("calculated dist", aligner.getRobotDistance(true, false));
+            telemetry.addData("angle", aligner.camera.getAngle(true));
             telemetry.addData("xDist", (int)aligner.xDist);
             telemetry.addData("yDist", (int)aligner.yDist);
 //            telemetry.addData("aligned?", aligner.aligned());
@@ -137,9 +160,10 @@ public class AutoAlignTest extends LinearOpMode {
             telemetry.addData("straight", aligner.straight);
             telemetry.addData("strafe", aligner.strafe);
             telemetry.addData("rotate", aligner.rotate);
+            telemetry.addData("angle", globalAngle);
             telemetry.update();
 
-            drive.update();
+            lastAngle = angle;
 
 //            if((timer.time() - packetSentTime) > 20) {
                 TelemetryPacket packet = new TelemetryPacket();

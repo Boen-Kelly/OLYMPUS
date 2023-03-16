@@ -27,7 +27,7 @@ public class CameraAimThread implements Runnable{
 
     private ElapsedTime time = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
-    public static double kPFrontCam = .004;
+    public static double kPFrontCam = .002;
     public static double kIFrontCam = 0;
     public static double kDFrontCam = 0.0000025;
     public static double kPBackCam = 0.0015;
@@ -68,7 +68,7 @@ public class CameraAimThread implements Runnable{
                 prevFrontPoint = frontPoint;
                 front.setPosition(frontPoint);
             } else if (backEnabled){
-                if (!(-20 < pipeline.backPoleDetector.getDistance() && pipeline.backPoleDetector.getDistance() < 20)) {
+                if (!(-10 < pipeline.backPoleDetector.getDistance() && pipeline.backPoleDetector.getDistance() < 10)) {
                     P = (pipeline.backPoleDetector.getDistance() / 120) * kPBackCam;
                     I += pipeline.backPoleDetector.getDistance() * kIBackCam;
                     D = ((pipeline.backPoleDetector.getDistance() - prevCamAngle) / (time.milliseconds() - prevTimeMs)) * kDBackCam;

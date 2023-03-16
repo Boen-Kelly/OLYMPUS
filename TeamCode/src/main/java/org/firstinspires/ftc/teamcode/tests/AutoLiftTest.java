@@ -14,9 +14,7 @@ import org.firstinspires.ftc.teamcode.classes.LiftArm;
 public class AutoLiftTest extends LinearOpMode {
     public void runOpMode(){
         LiftArm lift = new LiftArm(hardwareMap);
-        Thread liftThread = new Thread(lift);
 
-        liftThread.start();
         waitForStart();
 
         while (opModeIsActive()){
@@ -33,7 +31,6 @@ public class AutoLiftTest extends LinearOpMode {
             telemetry.addData("lift", lift);
             telemetry.update();
         }
-        liftThread.interrupt();
 
     }
 }

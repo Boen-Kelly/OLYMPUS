@@ -17,11 +17,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 public class AlignThread implements Runnable{
     private boolean usingFrontCam;
     private boolean masterEngaged = false;
+    boolean isPole = true;
     double distanceToTarget = 7;
     double robotHeading = 0;
     public static double headingError = 10;
     public static double xError = 5;
-    public static double yError = 3;
+    public static double yError = 1.5;
     public static double kPAngle = .023222;
     public static double kDAngle = 0;
     public static double kPY = .05;
@@ -65,7 +66,7 @@ public class AlignThread implements Runnable{
         timer.reset();
         while (!Thread.interrupted()){
             // master align code
-            masterAlign(distanceToTarget, robotHeading, usingFrontCam);
+            masterAlign(distanceToTarget, robotHeading, usingFrontCam, isPole);
             if(masterEngaged) {
                 xSpeed = xDist * kPX;
 
@@ -94,29 +95,33 @@ public class AlignThread implements Runnable{
         return (ratio*55)/2;
     }
 
-    public double getRobotDistance(boolean usingFrontCam){
-        return 539.8011184016967/pipeline.getMaxWidth(usingFrontCam);
+    public double getRobotDistance(boolean usingFrontCam, boolean isPole){
+        if(isPole) {
+            return 539.8011184016967 / pipeline.getMaxWidth(usingFrontCam);
+        }else{
+            return 1934.0789619903978 / pipeline.getMaxWidth(usingFrontCam);
+        }
     }
 
-    public void masterAlign(double distance, double robotAngle, boolean usingFrontCam){
-        double r = getRobotDistance(usingFrontCam);
+    public void masterAlign(double distance, double robotAngle, boolean usingFrontCam, boolean isPole){
+        double r = getRobotDistance(usingFrontCam, isPole);
         double angle = camera.getAngle(usingFrontCam);
 
         if(usingFrontCam) {
-            xDist = (r * Math.cos(Math.toRadians(angle))) - FRONT_CAM_X_OFFSET;
-
             if(frontDist > 150) {
                 yDist = (r * Math.sin(Math.toRadians(angle))) - FRONT_CAM_Y_OFFSET - distance;
+                xDist = (r * Math.cos(Math.toRadians(angle))) - FRONT_CAM_X_OFFSET;
             }else{
                 yDist = frontDist - distance;
+                xDist = 0;
             }
         }else {
-            xDist = (r * Math.cos(Math.toRadians(angle))) - BACK_CAM_X_OFFSET;
-
             if(backDist > 150) {
                 yDist = (r * Math.sin(Math.toRadians(angle))) - BACK_CAM_Y_OFFSET - distance;
+                xDist = (r * Math.cos(Math.toRadians(angle))) - BACK_CAM_X_OFFSET;
             }else{
                 yDist = backDist - distance;
+                xDist = 0;
             }
         }
     }
@@ -185,11 +190,12 @@ public class AlignThread implements Runnable{
         return ySpeed;
     }
 
-    public void engageMaster(double distanceToTarget, boolean usingFrontCam, double robotHeading){
+    public void engageMaster(double distanceToTarget, boolean usingFrontCam, double robotHeading, boolean isPole){
         masterEngaged = true;
         this.distanceToTarget = distanceToTarget;
         this.usingFrontCam = usingFrontCam;
         this.robotHeading = robotHeading;
+        this.isPole = isPole;
     }
 
     public void disengageMaster(){
