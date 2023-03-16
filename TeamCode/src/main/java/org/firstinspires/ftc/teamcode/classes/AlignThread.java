@@ -24,7 +24,7 @@ public class AlignThread implements Runnable{
     public static double yError = 3;
     public static double kPAngle = .023222;
     public static double kDAngle = 0;
-    public static double kPY = .01;
+    public static double kPY = .05;
     public static double kPYDist = 0.035;
     public static double kPX = .05;
     public static double maxAngleSpeed = .3;
@@ -41,17 +41,10 @@ public class AlignThread implements Runnable{
     public double straight = 0, strafe = 0, rotate = 0;
     double prevStraight = 0, prevStrafe = 0, prevRotate = 0;
     public double xSpeed = 0, ySpeed = 0;
-    double startTime = 0;
 
-    double globalAngle = 0;
+    double angles = 0;
 
-    Orientation lastAngles = new Orientation();
-    ElapsedTime time = new ElapsedTime();
-//    DcMotor bl, br, fl, fr;
-
-    BNO055IMU imu;
-
-    public DistanceSensor frontDist, backDist;
+    public double frontDist, backDist;
 
     private AutoAlignPipeline pipeline;
     public CameraAimThread camera;
@@ -59,25 +52,7 @@ public class AlignThread implements Runnable{
     ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
     private double lastTime = 0;
     public AlignThread(HardwareMap hardwareMap, AutoAlignPipeline pipeline, BNO055IMU.Parameters parameters){
-
-//        bl = hardwareMap.get(DcMotor.class, "bl");
-//        br = hardwareMap.get(DcMotor.class, "br");
-//        fl = hardwareMap.get(DcMotor.class, "fl");
-//        fr = hardwareMap.get(DcMotor.class, "fr");
-        this.pipeline = pipeline;
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
-        backDist = hardwareMap.get(DistanceSensor.class, "backDist");
-
-        imu.initialize(parameters);
-
-//        bl.setDirection(DcMotorSimple.Direction.REVERSE);
-//        fl.setDirection(DcMotorSimple.Direction.REVERSE);
-//
-//        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        this.pipeline = pipeline;;
 
         camera = new CameraAimThread(hardwareMap, pipeline);
         cameraThread = new Thread(camera);
@@ -99,18 +74,6 @@ public class AlignThread implements Runnable{
                 straight = (.9 * yAlign(distanceToTarget,usingFrontCam)) + (.1 * prevStraight);
                 rotate = ( .9 * gyroAlign(robotHeading)) + (.1 * prevRotate);
 
-//                if(usingFrontCam) {
-//                    fl.setPower(gyroAlign(robotHeading) + xSpeed + yAlign(distanceToTarget, usingFrontCam));
-//                    fr.setPower(-gyroAlign(robotHeading) - xSpeed + yAlign(distanceToTarget, usingFrontCam));
-//                    bl.setPower(gyroAlign(robotHeading) - xSpeed + yAlign(distanceToTarget, usingFrontCam));
-//                    br.setPower(-gyroAlign(robotHeading) + xSpeed + yAlign(distanceToTarget, usingFrontCam));
-//                }else{
-//                    fl.setPower(gyroAlign(robotHeading) - xSpeed - yAlign(distanceToTarget, usingFrontCam));
-//                    fr.setPower(-gyroAlign(robotHeading) + xSpeed - yAlign(distanceToTarget, usingFrontCam));
-//                    bl.setPower(gyroAlign(robotHeading) + xSpeed - yAlign(distanceToTarget, usingFrontCam));
-//                    br.setPower(-gyroAlign(robotHeading) - xSpeed - yAlign(distanceToTarget, usingFrontCam));
-//                }
-//                masterEngaged = !aligned();
                 prevStraight = straight;
                 prevStrafe = strafe;
                 prevRotate = rotate;
@@ -142,18 +105,18 @@ public class AlignThread implements Runnable{
         if(usingFrontCam) {
             xDist = (r * Math.cos(Math.toRadians(angle))) - FRONT_CAM_X_OFFSET;
 
-            if(frontDist.getDistance(DistanceUnit.INCH) > 150) {
+            if(frontDist > 150) {
                 yDist = (r * Math.sin(Math.toRadians(angle))) - FRONT_CAM_Y_OFFSET - distance;
             }else{
-                yDist = frontDist.getDistance(DistanceUnit.INCH) - distance;
+                yDist = frontDist - distance;
             }
         }else {
             xDist = (r * Math.cos(Math.toRadians(angle))) - BACK_CAM_X_OFFSET;
 
-            if(backDist.getDistance(DistanceUnit.INCH) > 150) {
+            if(backDist > 150) {
                 yDist = (r * Math.sin(Math.toRadians(angle))) - BACK_CAM_Y_OFFSET - distance;
             }else{
-                yDist = backDist.getDistance(DistanceUnit.INCH)  - distance;
+                yDist = backDist - distance;
             }
         }
     }
@@ -203,28 +166,11 @@ public class AlignThread implements Runnable{
 //    }
 
     public boolean aligned(){
-        return (robotHeading - headingError <= gyroHeading() && gyroHeading() <= robotHeading + headingError) && (-xError <= xDist && xDist <= xError) && (distanceToTarget - yError <= yDist && yDist <= distanceToTarget + yError);
-    }
-
-    public double gyroHeading(){
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
-
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
-
-        globalAngle += deltaAngle;
-
-        lastAngles = angles;
-
-        return globalAngle;
+        return (robotHeading - headingError <= angles && angles <= robotHeading + headingError) && (-xError <= xDist && xDist <= xError) && (distanceToTarget - yError <= yDist && yDist <= distanceToTarget + yError);
     }
 
     public double gyroAlign(double robotAngle){
-        angleError = gyroHeading() - robotAngle;
+        angleError = angles - robotAngle;
         double P = angleError * kPAngle;
         double D = (angleError - lastAngleError) * kDAngle;
 
@@ -252,5 +198,11 @@ public class AlignThread implements Runnable{
 
     public double getCycleTime(){
         return timer.time() - lastTime;
+    }
+
+    public void updateHardware(double angle, double frontDist, double backDist){
+        angles = angle;
+        this.frontDist = frontDist;
+        this.backDist = backDist;
     }
 }

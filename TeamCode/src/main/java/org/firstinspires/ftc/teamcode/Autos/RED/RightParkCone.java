@@ -289,13 +289,13 @@ public class RightParkCone extends LinearOpMode {
 
             drive.followTrajectory(collect);
 
-            lift.drop(350);
+//            lift.drop(350);
             sleep(500);
-            lift.lift();
+//            lift.lift();
 
             Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
-                        lift.drop(500);
+//                        lift.drop(500);
                     })
                     .lineToLinearHeading(new Pose2d(-36,14, Math.toRadians(135)))
                     .build();
@@ -341,7 +341,7 @@ public class RightParkCone extends LinearOpMode {
             Trajectory parkL = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(1, () -> {
                         lift.setSlurpPower(0);
-                        lift.drop();
+//                        lift.drop();
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
                     .splineTo(new Vector2d(-36, 12), Math.toRadians(0),
@@ -356,7 +356,7 @@ public class RightParkCone extends LinearOpMode {
             Trajectory park = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(1, () -> {
                         lift.setSlurpPower(0);
-                        lift.drop();
+//                        lift.drop();
                     })
 //                .lineToLinearHeading(new Pose2d(drive.getPoseEstimate().getX() + Math.cos(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getY() + Math.sin(Math.toDegrees(drive.getPoseEstimate().getHeading()))*10, drive.getPoseEstimate().getHeading()))
                     .lineToLinearHeading(new Pose2d(-36,12, Math.toRadians(180)))
@@ -367,7 +367,7 @@ public class RightParkCone extends LinearOpMode {
             TrajectorySequence park = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(1, () -> {
                         lift.setSlurpPower(0);
-                        lift.drop();
+//                        lift.drop();
                     })
                     .lineToLinearHeading(new Pose2d(-34,12, Math.toRadians(0)))
                     .lineToLinearHeading(new Pose2d(-60,12, Math.toRadians(0)))

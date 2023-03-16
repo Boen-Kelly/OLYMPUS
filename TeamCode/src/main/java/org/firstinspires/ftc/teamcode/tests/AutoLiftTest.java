@@ -3,34 +3,37 @@ package org.firstinspires.ftc.teamcode.tests;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@Autonomous
-@Disabled
+import org.firstinspires.ftc.teamcode.classes.LiftArm;
+
+@TeleOp
+//@Disabled
 public class AutoLiftTest extends LinearOpMode {
     public void runOpMode(){
-        DcMotor lift1, lift2;
+        LiftArm lift = new LiftArm(hardwareMap);
+        Thread liftThread = new Thread(lift);
 
-        lift1 = hardwareMap.get(DcMotor.class, "Lift1");
-        lift2 = hardwareMap.get(DcMotor.class, "Lift2");
-
-        lift1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lift2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        lift1.setDirection(DcMotorSimple.Direction.REVERSE);
-
+        liftThread.start();
         waitForStart();
 
-        lift1.setTargetPosition(1500);
-        lift2.setTargetPosition(lift1.getTargetPosition());
-        lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lift2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lift1.setPower(1);
-        lift2.setPower(lift1.getPower());
+        while (opModeIsActive()){
+            if(gamepad1.a){
+                lift.lift(500, true);
+            }else if(gamepad1.b){
+                lift.lift(250,false);
+            }else if(gamepad1.y){
+                lift.lift(0, true);
+            }else if(gamepad1.x){
+                lift.lift(0, false);
+            }
 
-        while (lift1.getCurrentPosition() < 1500) {
-
+            telemetry.addData("lift", lift);
+            telemetry.update();
         }
+        liftThread.interrupt();
+
     }
 }

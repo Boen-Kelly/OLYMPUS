@@ -9,10 +9,10 @@ public class LiftArm implements Runnable{
     private DcMotor lift1, lift2, arm;
     private CRServo slurper;
 
-    private boolean isLiftUp = false, intake = true;
-
-    private int height = 0, bottom = 0;
-    private double slurpPower = 0;
+    private int height = 0, prevHeight = height;
+    private double slurpPower = 0, prevSlurpPower = slurpPower;
+    boolean armUp = false;
+    String telemetry = "";
 
     public LiftArm(HardwareMap hardwareMap){
         lift1 = hardwareMap.get(DcMotor.class, "Lift1");
@@ -30,61 +30,60 @@ public class LiftArm implements Runnable{
         lift1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lift2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        lift1.setTargetPosition(0);
+        lift2.setTargetPosition(0);
+        arm.setTargetPosition(0);
+
+        lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        lift2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         slurper.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     public void run() {
         while (!Thread.interrupted()){
-            if(isLiftUp && (arm.getCurrentPosition() < -150 || intake)){
-                lift1.setTargetPosition(height);
-                lift2.setTargetPosition(lift1.getTargetPosition());
-                lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                lift2.setMode(lift1.getMode());
-                lift1.setPower(1);
-                lift2.setPower(lift1.getPower());
-            }else{
-                lift1.setTargetPosition(bottom);
-                lift2.setTargetPosition(lift1.getTargetPosition());
-                lift1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                lift2.setMode(lift1.getMode());
-                lift1.setPower(1);
-                lift2.setPower(lift1.getPower());
+            if(height != prevHeight && armUp){
+                while((lift1.getCurrentPosition() - 15) < height && height < (lift1.getCurrentPosition() + 15)) {
+                    if(arm.getCurrentPosition() < -150) {
+                        lift1.setTargetPosition(height);
+                        lift2.setTargetPosition(lift1.getTargetPosition());
+                        lift1.setPower(1);
+                        lift2.setPower(lift1.getPower());
+                    }
+
+                    arm.setTargetPosition(-1310);
+                    arm.setPower(1);
+                    telemetry = "armPos: " + arm.getCurrentPosition() + "\nliftPos: " + lift1.getCurrentPosition();
+                }
+            }else if(height != prevHeight){
+                while((lift1.getCurrentPosition() - 15) < height && height < (lift1.getCurrentPosition() + 15)){
+                    lift1.setTargetPosition(height);
+                    lift2.setTargetPosition(lift1.getTargetPosition());
+                    lift1.setPower(1);
+                    lift2.setPower(lift1.getPower());
+
+                    arm.setTargetPosition(0);
+                    arm.setPower(1);
+
+                    telemetry = "armPos: " + arm.getCurrentPosition() + "\nliftPos: " + lift1.getCurrentPosition();
+                }
             }
-
-            if(!intake && isLiftUp){
-                arm.setTargetPosition(-1310);
-            }else{
-                arm.setTargetPosition(0);
-            }
-
-            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            arm.setPower(1);
-
-            slurper.setPower(slurpPower);
+            prevHeight = height;
+            telemetry = "prev: " + prevHeight + "\nHeight: " + height;
         }
     }
 
-    public void lift (int height, boolean intake){
-        isLiftUp = true;
-        this.intake = intake;
+    public void lift (int height, boolean armUp){
+        this.armUp = armUp;
         this.height = height;
     }
 
-    public void lift (){
-        isLiftUp = true;
-    }
-
-    public void drop(int bottom){
-        isLiftUp = false;
-        this.bottom = bottom;
-    }
-
-    public void drop () {
-        isLiftUp = false;
-        bottom = 0;
-    }
-
     public void setSlurpPower(double power){
-        slurpPower = power;
+        slurper.setPower(power);
+    }
+
+    public String toString(){
+        return telemetry;
     }
 }

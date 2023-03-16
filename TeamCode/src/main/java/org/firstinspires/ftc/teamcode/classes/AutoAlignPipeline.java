@@ -36,8 +36,8 @@ import java.util.concurrent.TimeUnit;
 
 @Config
 public class AutoAlignPipeline {
-    OpenCvWebcam backCam;
-    OpenCvWebcam frontCam;
+    OpenCvWebcam backCam; //TODO:
+    OpenCvWebcam frontCam;//TODO:
 
     String telemetry = "waiting for input";
     public static int threshVal = 128;

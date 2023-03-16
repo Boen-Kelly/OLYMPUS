@@ -22,6 +22,7 @@ import org.firstinspires.ftc.teamcode.RoadRunner.trajectorysequence.TrajectorySe
 import org.firstinspires.ftc.teamcode.classes.AlignThread;
 import org.firstinspires.ftc.teamcode.classes.AutoAlignPipeline;
 import org.firstinspires.ftc.teamcode.classes.LiftArm;
+import org.firstinspires.ftc.teamcode.classes.TestThread.TestThread;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -189,7 +190,6 @@ public class RightParkCone extends LinearOpMode {
             telemetry.update();
         }
 
-
         while(!isStarted() && !isStopRequested()) {
             if(gamepad1.a){
                 pipeline.setPipelines("pole", "pole");
@@ -259,7 +259,7 @@ public class RightParkCone extends LinearOpMode {
         pipeline.setPipelines("sleeve", "pole");
         pipeline.backPoleDetector.setColors(true, false, false);
         pipeline.frontPoleDetector.setColors(false, false, true);
-        aligner.camera.pointCam(.6, .75);
+        aligner.camera.pointCam(.6, .6);
 
         waitForStart();
         timer.reset();
@@ -267,22 +267,24 @@ public class RightParkCone extends LinearOpMode {
 
         drive.followTrajectorySequence(traj);
 
-//        lift.lift(1850, false);
+        lift.lift(1850, true);
 
         aligner.camera.enableCam(false);
-        aligner.engageMaster(0, false, 45);
+        aligner.engageMaster(0, false, 135);
 
         startingPose = drive.getPoseEstimate();
 
         double AlignerTime = timer.time(TimeUnit.MILLISECONDS);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         while(!aligner.aligned()) {
+            aligner.updateHardware(Math.toDegrees(drive.getPoseEstimate().getHeading()),frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
+
             currentPose = drive.getPoseEstimate();
 
-//            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
-//            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
-//            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
-//            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
 
             if(Math.abs(startingPose.getX() - currentPose.getX()) > 10){
                 strafe = 0;
@@ -297,31 +299,34 @@ public class RightParkCone extends LinearOpMode {
                 straight = aligner.straight;
             }
 
-            drive.setWeightedDrivePower(
-                    new Pose2d(
-                            -straight,
-                            strafe,
-                            -aligner.rotate
-                    )
-            );
+//            drive.setWeightedDrivePower(
+//                    new Pose2d(
+//                            -straight,
+//                            strafe,
+//                            -aligner.rotate
+//                    )
+//            );
 
-            telemetry.addData("cam angle", aligner.camera.getAngle(false));
-            telemetry.addData("robot angle", aligner.gyroHeading());
-            telemetry.addData("xDist", (int)aligner.xDist);
-            telemetry.addData("yDist", (int)aligner.yDist);
-            telemetry.addData("back dist", aligner.backDist.getDistance(DistanceUnit.INCH));
-            telemetry.addData("aligned?", aligner.aligned());
-            telemetry.addData("drive x", currentPose.getX());
-            telemetry.addData("drive y", currentPose.getY());
-            telemetry.update();
+//            telemetry.addData("cam angle", aligner.camera.getAngle(false));
+//            telemetry.addData("robot angle", Math.toDegrees(drive.getPoseEstimate().getHeading()));
+//            telemetry.addData("xDist", (int)aligner.xDist);
+//            telemetry.addData("yDist", (int)aligner.yDist);
+//            telemetry.addData("back dist", backDist.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("Thread back dist", aligner.backDist);
+//            telemetry.addData("aligned?", aligner.aligned());
+//            telemetry.addData("drive x", currentPose.getX());
+//            telemetry.addData("drive y", currentPose.getY());
+//            telemetry.update();
             drive.update();
         }
 
         telemetry.addLine("DONE!");
+        telemetry.addData("liftThread", lift);
         telemetry.update();
 
         aligner.camera.disableCam(false);
         aligner.disengageMaster();
+        drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         fl.setPower(0);
         fr.setPower(0);
@@ -332,67 +337,164 @@ public class RightParkCone extends LinearOpMode {
 
         lift.setSlurpPower(-1);
 
-        /**
-        for(int i = 0; i < 1; i++){
+
+        for(int i = 0; i < 1; i++) {
             Trajectory pickupcone = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
-                        lift.drop();
+                        lift.lift(0, false);
                         lift.setSlurpPower(0);
                     })
-                    .forward(distanceToPole - 4)
+                    .forward(10)
                     .splineTo(new Vector2d(-40, 14), Math.toRadians(180))
                     .build();
 
             drive.followTrajectory(pickupcone);
 
-            aligner.camera.enableCam(true);
-            aligner.engageMaster(4, true, 90);
+            lift.lift(1000, false);
 
-            AlignerTime = timer.time();
-            while(!aligner.aligned() || timer.time() - AlignerTime < 3000) {
-                drive.setMotorPowers(
-                        aligner.rotate + aligner.strafe + aligner.straight,
-                        aligner.rotate - aligner.strafe + aligner.straight,
-                        -aligner.rotate + aligner.strafe + aligner.straight,
-                        -aligner.rotate - aligner.strafe + aligner.rotate);
+            aligner.camera.enableCam(true);
+            aligner.engageMaster(0, true, 180);
+
+            startingPose = drive.getPoseEstimate();
+
+            AlignerTime = timer.time(TimeUnit.MILLISECONDS);
+            drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            while (!aligner.aligned()) {
+                aligner.updateHardware(Math.toDegrees(drive.getPoseEstimate().getHeading()), frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
+
+                currentPose = drive.getPoseEstimate();
+
+//            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+//            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+//            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+//            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+
+//                if(Math.abs(startingPose.getX() - currentPose.getX()) > 10){
+//                    strafe = 0;
+//                }else{
+//                    strafe = aligner.strafe;
+//                }
+//
+//                if(Math.abs(startingPose.getY() - currentPose.getY()) > 20){
+//                    straight = 0;
+//                    break;
+//                }else{
+//                    straight = aligner.straight;
+//                }
+
+                drive.setWeightedDrivePower(
+                        new Pose2d(
+                                straight,
+                                -strafe,
+                                -aligner.rotate
+                        )
+                );
+
+//            telemetry.addData("cam angle", aligner.camera.getAngle(false));
+//            telemetry.addData("robot angle", Math.toDegrees(drive.getPoseEstimate().getHeading()));
+//            telemetry.addData("xDist", (int)aligner.xDist);
+//            telemetry.addData("yDist", (int)aligner.yDist);
+//            telemetry.addData("back dist", backDist.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("Thread back dist", aligner.backDist);
+//            telemetry.addData("aligned?", aligner.aligned());
+//            telemetry.addData("drive x", currentPose.getX());
+//            telemetry.addData("drive y", currentPose.getY());
+//            telemetry.update();
+                drive.update();
             }
+
+            telemetry.addLine("DONE!");
+            telemetry.update();
+
+            aligner.camera.disableCam(true);
+            aligner.disengageMaster();
+
+            fl.setPower(0);
+            fr.setPower(0);
+            bl.setPower(0);
+            br.setPower(0);
 
             drive.update();
 
-            lift.drop(350);
+            lift.lift(350, false);
             sleep(500);
-            lift.lift();
+            lift.lift(1000, false);
 
             Trajectory deliver = drive.trajectoryBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(.5, () -> {
-                        lift.drop(500);
+                        lift.lift(500,false);
                     })
-                    .lineToLinearHeading(new Pose2d(-36,14, Math.toRadians(135)))
+                    .lineToLinearHeading(new Pose2d(-36, 14, Math.toRadians(135)))
                     .build();
 
             drive.followTrajectory(deliver);
 
-
-            telemetry.addLine("aligning");
-            telemetry.update();
-
             aligner.camera.enableCam(false);
-            aligner.engageMaster(4, false, 45);
+            aligner.engageMaster(0, false, 135);
 
-            AlignerTime = timer.time();
-            while(!aligner.aligned() || timer.time() - AlignerTime < 3000) {
-                drive.setMotorPowers(
-                        aligner.rotate - aligner.strafe - aligner.straight,
-                        aligner.rotate + aligner.strafe - aligner.straight,
-                        -aligner.rotate - aligner.strafe - aligner.straight,
-                        -aligner.rotate + aligner.strafe - aligner.rotate);
+            lift.lift(1850, true);
+
+            startingPose = drive.getPoseEstimate();
+
+            AlignerTime = timer.time(TimeUnit.MILLISECONDS);
+            drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            while (!aligner.aligned()) {
+                aligner.updateHardware(Math.toDegrees(drive.getPoseEstimate().getHeading()), frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
+
+                currentPose = drive.getPoseEstimate();
+
+//            fl.setPower(aligner.rotate - aligner.strafe - aligner.straight);
+//            fr.setPower(-aligner.rotate + aligner.strafe - aligner.straight);
+//            bl.setPower(aligner.rotate + aligner.strafe - aligner.straight);
+//            br.setPower(-aligner.rotate - aligner.strafe - aligner.straight);
+
+                if (Math.abs(startingPose.getX() - currentPose.getX()) > 10) {
+                    strafe = 0;
+                } else {
+                    strafe = aligner.strafe;
+                }
+
+                if (Math.abs(startingPose.getY() - currentPose.getY()) > 20) {
+                    straight = 0;
+                    break;
+                } else {
+                    straight = aligner.straight;
+                }
+
+                drive.setWeightedDrivePower(
+                        new Pose2d(
+                                -straight,
+                                strafe,
+                                -aligner.rotate
+                        )
+                );
+
+//            telemetry.addData("cam angle", aligner.camera.getAngle(false));
+//            telemetry.addData("robot angle", Math.toDegrees(drive.getPoseEstimate().getHeading()));
+//            telemetry.addData("xDist", (int)aligner.xDist);
+//            telemetry.addData("yDist", (int)aligner.yDist);
+//            telemetry.addData("back dist", backDist.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("Thread back dist", aligner.backDist);
+//            telemetry.addData("aligned?", aligner.aligned());
+//            telemetry.addData("drive x", currentPose.getX());
+//            telemetry.addData("drive y", currentPose.getY());
+//            telemetry.update();
+                drive.update();
             }
 
-            drive.update();
+            telemetry.addLine("DONE!");
+            telemetry.update();
 
-            lift.setSlurpPower(-1);
+            aligner.camera.disableCam(false);
+            aligner.disengageMaster();
+
+            fl.setPower(0);
+            fr.setPower(0);
+            bl.setPower(0);
+            br.setPower(0);
+
+            drive.update();
         }
-         */
 
         /**
         if(AprilTagID == left) {
@@ -466,7 +568,7 @@ public class RightParkCone extends LinearOpMode {
             telemetry.update();
         }
 
-        liftThread.interrupt();
+//        liftThread.interrupt();
         alignerThread.interrupt();
     }
 }

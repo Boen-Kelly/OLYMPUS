@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 @Config
 public class CameraAimThread implements Runnable{
     AutoAlignPipeline pipeline;
-    public Servo front;
-    public Servo back;
+    public Servo front;//TODO:
+    public Servo back;//TODO:
     private double P = 0;
     private double I = 0;
     private double D = 0;
@@ -35,6 +35,8 @@ public class CameraAimThread implements Runnable{
     public static double kDBackCam = .00000001;
     public static double frontPoint = .6;
     public static double backPoint = .5;
+    double prevFrontPoint = frontPoint;
+    double prevBackPoint = backPoint;
 
     public CameraAimThread (HardwareMap hardwareMap, AutoAlignPipeline pipeline){
         front = hardwareMap.get(Servo.class, "front");
@@ -63,6 +65,7 @@ public class CameraAimThread implements Runnable{
 
                 prevCamAngle = pipeline.frontPoleDetector.getDistance();
 
+                prevFrontPoint = frontPoint;
                 front.setPosition(frontPoint);
             } else if (backEnabled){
                 if (!(-20 < pipeline.backPoleDetector.getDistance() && pipeline.backPoleDetector.getDistance() < 20)) {
@@ -77,10 +80,12 @@ public class CameraAimThread implements Runnable{
 
                 prevCamAngle = pipeline.frontPoleDetector.getDistance();
 
+                prevBackPoint = backPoint;
                 back.setPosition(backPoint);
-            }else{
+            }else if((int)(prevBackPoint * 100) != (int)(backPoint * 100)){
+                back.setPosition(backPoint);
+            }else if((int)(prevFrontPoint * 100) != (int)(frontPoint * 100)){
                 front.setPosition(frontPoint);
-                back.setPosition(backPoint);
             }
             prevTimeMs = time.milliseconds();
         }
@@ -109,9 +114,9 @@ public class CameraAimThread implements Runnable{
 
     public double getAngle(boolean usingFrontCam){
         if(usingFrontCam){
-            return 180 - (front.getPosition() * 180) - 50.4 + 90;
+            return 180 - (frontPoint * 180) - 50.4 + 90;
         }else{
-            return 180 - (back.getPosition() * 180);
+            return 180 - (backPoint * 180);
         }
     }
 
