@@ -13,6 +13,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
+import java.util.concurrent.TimeUnit;
+
 @Config
 public class AlignThread implements Runnable{
     private boolean usingFrontCam;
@@ -22,20 +24,22 @@ public class AlignThread implements Runnable{
     double robotHeading = 0;
     public static double headingError = 10;
     public static double xError = 5;
-    public static double yError = 1.5;
+    public static double yError = 3;
     public static double kPAngle = .023222;
     public static double kDAngle = 0;
-    public static double kPY = .05;
-    public static double kPYDist = 0.035;
-    public static double kPX = .05;
+    public static double kPY = .065;
+    public static double kDY = 0;
+    double PY;
+    double DY;
+    public static double kPX = .07;
     public static double maxAngleSpeed = .3;
     public static double xMaxSpeed = 1;
-    public static double yMaxSpeed = .5;
+    public static double yMaxSpeed = .3;
     public static double frontPoint = .84, backPoint = .8;
     public final double FRONT_CAM_X_OFFSET = -5.75;
     public final double FRONT_CAM_Y_OFFSET = -5.75;
-    public static double BACK_CAM_X_OFFSET = 5.75;
-    public static double BACK_CAM_Y_OFFSET = 0;
+    public static double BACK_CAM_X_OFFSET = 3.75;
+    public static double BACK_CAM_Y_OFFSET = -5.75;
     public double xDist = 0, yDist = 0;
     double angleError = 0, lastAngleError = 0;
     double I = 0;
@@ -51,9 +55,10 @@ public class AlignThread implements Runnable{
     public CameraAimThread camera;
     Thread cameraThread;
     ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+    double prevYDist = yDist;
     private double lastTime = 0;
     public AlignThread(HardwareMap hardwareMap, AutoAlignPipeline pipeline, BNO055IMU.Parameters parameters){
-        this.pipeline = pipeline;;
+        this.pipeline = pipeline;
 
         camera = new CameraAimThread(hardwareMap, pipeline);
         cameraThread = new Thread(camera);
@@ -96,10 +101,14 @@ public class AlignThread implements Runnable{
     }
 
     public double getRobotDistance(boolean usingFrontCam, boolean isPole){
-        if(isPole) {
-            return 539.8011184016967 / pipeline.getMaxWidth(usingFrontCam);
+        if(pipeline.getMaxWidth(usingFrontCam) > 0) {
+            if (isPole) {
+                return 539.8011184016967 / pipeline.getMaxWidth(usingFrontCam);
+            } else {
+                return 1934.0789619903978 / pipeline.getMaxWidth(usingFrontCam);
+            }
         }else{
-            return 1934.0789619903978 / pipeline.getMaxWidth(usingFrontCam);
+            return 0;
         }
     }
 
@@ -108,20 +117,27 @@ public class AlignThread implements Runnable{
         double angle = camera.getAngle(usingFrontCam);
 
         if(usingFrontCam) {
-            if(frontDist > 150) {
-                yDist = (r * Math.sin(Math.toRadians(angle))) - FRONT_CAM_Y_OFFSET - distance;
+            if(frontDist > 15){
                 xDist = (r * Math.cos(Math.toRadians(angle))) - FRONT_CAM_X_OFFSET;
             }else{
-                yDist = frontDist - distance;
                 xDist = 0;
             }
+            if(frontDist > 150) {
+                yDist = (r * Math.sin(Math.toRadians(angle))) - FRONT_CAM_Y_OFFSET - distance;
+            }else if(!Double.isNaN(frontDist)){
+                yDist = frontDist - distance;
+            }
         }else {
-            if(backDist > 150) {
-                yDist = (r * Math.sin(Math.toRadians(angle))) - BACK_CAM_Y_OFFSET - distance;
+            if(backDist > 15){
                 xDist = (r * Math.cos(Math.toRadians(angle))) - BACK_CAM_X_OFFSET;
             }else{
-                yDist = backDist - distance;
                 xDist = 0;
+            }
+
+            if(backDist > 150) {
+                yDist = (r * Math.sin(Math.toRadians(angle))) - BACK_CAM_Y_OFFSET - distance;
+            }else if(!(Double.isNaN(backDist))){
+                yDist = backDist - distance;
             }
         }
     }
@@ -171,7 +187,19 @@ public class AlignThread implements Runnable{
 //    }
 
     public boolean aligned(){
-        return (robotHeading - headingError <= angles && angles <= robotHeading + headingError) && (-xError <= xDist && xDist <= xError) && (distanceToTarget - yError <= yDist && yDist <= distanceToTarget + yError);
+        return (robotHeading - headingError <= angles && angles <= robotHeading + headingError) && (-xError <= xDist && xDist <= xError) && (-yError <= yDist && yDist <= yError);
+    }
+
+    public boolean heading(){
+        return (robotHeading - headingError <= angles && angles <= robotHeading + headingError);
+    }
+
+    public boolean xDirection(){
+        return (-xError <= xDist && xDist <= xError);
+    }
+
+    public boolean yDirection(){
+        return (-yError <= yDist && yDist <= yError);
     }
 
     public double gyroAlign(double robotAngle){
@@ -185,8 +213,15 @@ public class AlignThread implements Runnable{
     }
 
     public double yAlign(double distance, boolean usingFrontCam){
-        ySpeed = yDist * kPY;
+
+        PY = yDist * kPY;
+//        DY = (yDist - prevYDist) * kDY;
+
+        ySpeed = PY;
         ySpeed = Range.clip(ySpeed, -yMaxSpeed, yMaxSpeed);
+
+        prevYDist = yDist;
+
         return ySpeed;
     }
 
@@ -210,5 +245,9 @@ public class AlignThread implements Runnable{
         angles = angle;
         this.frontDist = frontDist;
         this.backDist = backDist;
+    }
+
+    public void stopCamera(){
+        cameraThread.interrupt();
     }
 }

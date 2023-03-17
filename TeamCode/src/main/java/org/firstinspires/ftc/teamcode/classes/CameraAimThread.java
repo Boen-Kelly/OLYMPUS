@@ -35,8 +35,6 @@ public class CameraAimThread implements Runnable{
     public static double kDBackCam = .00000001;
     public static double frontPoint = .6;
     public static double backPoint = .5;
-    double prevFrontPoint = frontPoint;
-    double prevBackPoint = backPoint;
 
     public CameraAimThread (HardwareMap hardwareMap, AutoAlignPipeline pipeline){
         front = hardwareMap.get(Servo.class, "front");
@@ -65,7 +63,6 @@ public class CameraAimThread implements Runnable{
 
                 prevCamAngle = pipeline.frontPoleDetector.getDistance();
 
-                prevFrontPoint = frontPoint;
                 front.setPosition(frontPoint);
             } else if (backEnabled){
                 if (!(-10 < pipeline.backPoleDetector.getDistance() && pipeline.backPoleDetector.getDistance() < 10)) {
@@ -80,13 +77,9 @@ public class CameraAimThread implements Runnable{
 
                 prevCamAngle = pipeline.frontPoleDetector.getDistance();
 
-                prevBackPoint = backPoint;
                 back.setPosition(backPoint);
-            }else if((int)(prevBackPoint * 100) != (int)(backPoint * 100)){
-                back.setPosition(backPoint);
-            }else if((int)(prevFrontPoint * 100) != (int)(frontPoint * 100)){
-                front.setPosition(frontPoint);
             }
+
             prevTimeMs = time.milliseconds();
         }
     }
@@ -110,6 +103,9 @@ public class CameraAimThread implements Runnable{
     public void pointCam(double frontPoint, double backPoint){
         CameraAimThread.frontPoint = frontPoint;
         CameraAimThread.backPoint = backPoint;
+
+        front.setPosition(frontPoint);
+        back.setPosition(backPoint);
     }
 
     public double getAngle(boolean usingFrontCam){
