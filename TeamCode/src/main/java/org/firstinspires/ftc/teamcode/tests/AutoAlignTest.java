@@ -90,8 +90,8 @@ public class AutoAlignTest extends LinearOpMode {
 
         while(!isStarted() && !isStopRequested()) {
             pipeline.setPipelines("pole", "pole");
-            pipeline.frontPoleDetector.setColors(false, false, true);
-            pipeline.backPoleDetector.setColors(false, false, true);
+            pipeline.frontPoleDetector.setColors(true, false, false);
+            pipeline.backPoleDetector.setColors(true, false, false);
 
             telemetry.addLine("Waiting for start");
             telemetry.update();
@@ -130,21 +130,21 @@ public class AutoAlignTest extends LinearOpMode {
 //            );
 
             if(gamepad1.a){
-                aligner.camera.enableCam(true);
-                aligner.engageMaster(distance,true, 0, false);
+                aligner.camera.enableCam(false);
+                aligner.engageMaster(distance,false, 0, true);
             }else if(gamepad1.y || aligner.aligned()){
-                aligner.camera.disableCam(true);
+                aligner.camera.disableCam(false);
                 aligner.disengageMaster();
             }else if(gamepad1.x){
-                aligner.camera.enableCam(true);
+                aligner.camera.enableCam(false);
             }else if(gamepad1.b){
-                aligner.camera.disableCam(true);
+                aligner.camera.disableCam(false);
                 aligner.camera.pointCam(frontPoint, backPoint);
             }
 
 //            telemetry.addData("Pipeline says", pipeline);
-            telemetry.addData("calculated dist", aligner.getRobotDistance(true, false));
-            telemetry.addData("angle", aligner.camera.getAngle(true));
+            telemetry.addData("calculated dist", aligner.getRobotDistance(false, true));
+            telemetry.addData("angle", aligner.camera.getAngle(false));
             telemetry.addData("xDist", (int)aligner.xDist);
             telemetry.addData("yDist", (int)aligner.yDist);
 //            telemetry.addData("aligned?", aligner.aligned());

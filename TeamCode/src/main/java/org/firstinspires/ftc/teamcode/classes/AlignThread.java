@@ -27,7 +27,7 @@ public class AlignThread implements Runnable{
     public static double yError = 3;
     public static double kPAngle = .023222;
     public static double kDAngle = 0;
-    public static double kPY = .065;
+    public static double kPY = .04;
     public static double kDY = 0;
     double PY;
     double DY;
@@ -103,7 +103,7 @@ public class AlignThread implements Runnable{
     public double getRobotDistance(boolean usingFrontCam, boolean isPole){
         if(pipeline.getMaxWidth(usingFrontCam) > 0) {
             if (isPole) {
-                return 539.8011184016967 / pipeline.getMaxWidth(usingFrontCam);
+                return 468.9239815/ pipeline.getMaxWidth(usingFrontCam);
             } else {
                 return 1934.0789619903978 / pipeline.getMaxWidth(usingFrontCam);
             }

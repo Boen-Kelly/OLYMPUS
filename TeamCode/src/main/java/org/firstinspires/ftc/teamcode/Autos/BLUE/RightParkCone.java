@@ -374,7 +374,7 @@ public class RightParkCone extends LinearOpMode {
 
             AlignerTime = timer.time(TimeUnit.MILLISECONDS);
             drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            while (alignedTime < 500/** && (timer.time(TimeUnit.MILLISECONDS) - AlignerTime) < 3000*/) {
+            while (alignedTime < 10/** && (timer.time(TimeUnit.MILLISECONDS) - AlignerTime) < 3000*/) {
                 aligner.updateHardware(Math.toDegrees(drive.getPoseEstimate().getHeading()), frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
 
 //                currentPose = drive.getPoseEstimate();

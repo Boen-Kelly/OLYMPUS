@@ -31,7 +31,7 @@ public class CameraAimThread implements Runnable{
     public static double kIFrontCam = 0;
     public static double kDFrontCam = 0.0000025;
     public static double kPBackCam = 0.0015;
-    public static double kIBackCam = 0;
+    public static double kIBackCam = 0.0000001  ;
     public static double kDBackCam = .00000001;
     public static double frontPoint = .6;
     public static double backPoint = .5;
@@ -58,6 +58,9 @@ public class CameraAimThread implements Runnable{
                     D = ((pipeline.frontPoleDetector.getDistance() - prevCamAngle) / (time.milliseconds() - prevTimeMs)) * kDFrontCam;
                 }
 
+//                P = Range.clip(P, .28, 1);
+//                D = Range.clip(D, .28,1);
+
                 frontPoint += (P + I + D) * deltaTime * speedFactor;
                 frontPoint = Range.clip(frontPoint, 0, 1);
 
@@ -70,6 +73,9 @@ public class CameraAimThread implements Runnable{
                     I += pipeline.backPoleDetector.getDistance() * kIBackCam;
                     D = ((pipeline.backPoleDetector.getDistance() - prevCamAngle) / (time.milliseconds() - prevTimeMs)) * kDBackCam;
                 }
+
+//                P = Range.clip(P, .28, 1);
+//                D = Range.clip(D, .28,1);
 
                 backPoint += (P + I + D) * deltaTime * speedFactor;
 
@@ -103,6 +109,10 @@ public class CameraAimThread implements Runnable{
     public void pointCam(double frontPoint, double backPoint){
         CameraAimThread.frontPoint = frontPoint;
         CameraAimThread.backPoint = backPoint;
+
+        P = 0;
+        I = 0;
+        D = 0;
 
         front.setPosition(frontPoint);
         back.setPosition(backPoint);
