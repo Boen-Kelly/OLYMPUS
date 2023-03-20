@@ -24,7 +24,7 @@ public class AlignThread implements Runnable{
     double robotHeading = 0;
     public static double headingError = 10;
     public static double xError = 5;
-    public static double yError = 3;
+    public static double yError = 2;
     public static double kPAngle = .023222;
     public static double kDAngle = 0;
     public static double kPY = .04;
@@ -34,7 +34,7 @@ public class AlignThread implements Runnable{
     public static double kPX = .07;
     public static double maxAngleSpeed = .3;
     public static double xMaxSpeed = 1;
-    public static double yMaxSpeed = .3;
+    public static double yMaxSpeed = .4;
     public static double frontPoint = .84, backPoint = .8;
     public final double FRONT_CAM_X_OFFSET = -5.75;
     public final double FRONT_CAM_Y_OFFSET = -5.75;

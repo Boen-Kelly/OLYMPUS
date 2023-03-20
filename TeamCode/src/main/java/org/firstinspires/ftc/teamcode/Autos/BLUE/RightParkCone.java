@@ -81,7 +81,7 @@ public class RightParkCone extends LinearOpMode {
         pipeline.backPoleDetector.setColors(true, false, false);
         pipeline.frontPoleDetector.setColors(false, false, true);
 
-        DistanceSensor backDist, frontDist;
+        DistanceSensor backDist, frontDist, sideDist;
         Servo lilArmL, lilArmR;
         DcMotor bl, br, fl, fr;
 
@@ -91,6 +91,7 @@ public class RightParkCone extends LinearOpMode {
         fr = hardwareMap.get(DcMotor.class, "fr");
         backDist = hardwareMap.get(DistanceSensor.class, "backDist");
         frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
+        sideDist = hardwareMap.get(DistanceSensor.class, "sideDist");
         lilArmL = hardwareMap.get(Servo.class, "lilArm1");
         lilArmR = hardwareMap.get(Servo.class, "lilArm2");
 
@@ -302,7 +303,7 @@ public class RightParkCone extends LinearOpMode {
                 toggle2 = true;
             }
 
-            if(aligner.camera.getAngle(false) < 10){
+            if(aligner.camera.getAngle(false) < 10 || sideDist.getDistance(DistanceUnit.INCH) < 6){
                 break;
             }
 
@@ -495,7 +496,7 @@ public class RightParkCone extends LinearOpMode {
                     toggle2 = true;
                 }
 
-                if(aligner.camera.getAngle(false) < 10){
+                if(aligner.camera.getAngle(false) < 10 || sideDist.getDistance(DistanceUnit.INCH) < 6){
                     break;
                 }
 

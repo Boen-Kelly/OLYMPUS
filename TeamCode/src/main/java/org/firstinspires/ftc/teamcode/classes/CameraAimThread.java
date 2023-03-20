@@ -62,7 +62,7 @@ public class CameraAimThread implements Runnable{
 //                D = Range.clip(D, .28,1);
 
                 frontPoint += (P + I + D) * deltaTime * speedFactor;
-                frontPoint = Range.clip(frontPoint, 0, 1);
+                frontPoint = Range.clip(frontPoint, 0, .8);
 
                 prevCamAngle = pipeline.frontPoleDetector.getDistance();
 

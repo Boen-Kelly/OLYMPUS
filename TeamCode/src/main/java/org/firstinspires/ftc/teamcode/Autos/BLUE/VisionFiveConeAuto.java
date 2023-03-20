@@ -72,7 +72,7 @@ public class VisionFiveConeAuto extends LinearOpMode{
         pipeline.backPoleDetector.setColors(true, false, false);
         pipeline.frontPoleDetector.setColors(false, false, true);
 
-        DistanceSensor backDist, frontDist;
+        DistanceSensor backDist, frontDist, sideDist;
         Servo lilArmL, lilArmR;
         DcMotor bl, br, fl, fr;
 
@@ -84,6 +84,7 @@ public class VisionFiveConeAuto extends LinearOpMode{
         frontDist = hardwareMap.get(DistanceSensor.class, "frontDist");
         lilArmL = hardwareMap.get(Servo.class, "lilArm1");
         lilArmR = hardwareMap.get(Servo.class, "lilArm2");
+        sideDist = hardwareMap.get(DistanceSensor.class, "sideDist");
 
         bl.setDirection(DcMotorSimple.Direction.REVERSE);
         fl.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -143,12 +144,14 @@ public class VisionFiveConeAuto extends LinearOpMode{
                     aligner.camera.pointCam(.6,.6);
                 })
                 .addTemporalMarker(2, () -> {
-                    lift.lift(1850, true);
+                    lift.lift(2200, true);
                 })
-                .setTangent(Math.toRadians(-90))
-                .splineToConstantHeading(new Vector2d(-36, 3), Math.toRadians(-90))
-                .splineToSplineHeading(new Pose2d(-36, 12, Math.toRadians(135)), Math.toRadians(90),SampleMecanumDrive.getVelocityConstraint(30, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL))
+                .lineToLinearHeading(new Pose2d(-36, 3, Math.toRadians(90)),
+                        SampleMecanumDrive.getVelocityConstraint(40, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(40))
+                .lineToLinearHeading(new Pose2d(-36, 12, Math.toRadians(135)),
+                        SampleMecanumDrive.getVelocityConstraint(40, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(40))
                 .build();
 
         pipeline.setPipelines("pole", "sleeve");
@@ -233,13 +236,13 @@ public class VisionFiveConeAuto extends LinearOpMode{
         drive.followTrajectorySequence(pushCone);
 
         aligner.camera.enableCam(false);
-        aligner.engageMaster(5, false, 135, true);
+        aligner.engageMaster(6, false, 135, true);
 
         startingPose = drive.getPoseEstimate();
 
         double AlignerTime = timer.time(TimeUnit.MILLISECONDS);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        while(alignedTime < 500 /** && (timer.time(TimeUnit.MILLISECONDS) - AlignerTime) < 3000*/) {
+        while(alignedTime < 250 /** && (timer.time(TimeUnit.MILLISECONDS) - AlignerTime) < 3000*/) {
             aligner.updateHardware(Math.toDegrees(drive.getPoseEstimate().getHeading()),frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
 
             currentPose = drive.getPoseEstimate();
@@ -263,7 +266,7 @@ public class VisionFiveConeAuto extends LinearOpMode{
                 toggle2 = true;
             }
 
-            if(aligner.camera.getAngle(false) < 10){
+            if(aligner.camera.getAngle(false) < 10 || sideDist.getDistance(DistanceUnit.INCH) < 6){
                 break;
             }
 
@@ -313,22 +316,22 @@ public class VisionFiveConeAuto extends LinearOpMode{
         lift.setSlurpPower(-1);
         sleep(500);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             TrajectorySequence toStack = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                     .addTemporalMarker(0, () -> {
                         lift.lift(1000, false);
                         lift.setSlurpPower(1);
-                        aligner.camera.pointCam(.6, .6);
+                        aligner.camera.pointCam(.7, .6);
                     })
                     .setTangent(Math.toRadians(135))
                     .splineToSplineHeading(new Pose2d(-48,12, Math.toRadians(180)),Math.toRadians(180))
-//                    .splineToConstantHeading(new Vector2d(-65, 12), Math.toRadians(180))
+//                    .splineToConstantHeading(new Vector2d(-60, 12), Math.toRadians(180))
                     .build();
 
             drive.followTrajectorySequence(toStack);
 
             aligner.camera.enableCam(true);
-            aligner.engageMaster(2, true, 180, false);
+            aligner.engageMaster(0, true, 180, false);
 
             startingPose = drive.getPoseEstimate();
 
@@ -341,10 +344,10 @@ public class VisionFiveConeAuto extends LinearOpMode{
 
 //                currentPose = drive.getPoseEstimate();
 
-                fl.setPower(aligner.rotate + aligner.strafe + 2 * aligner.straight);
-                fr.setPower(-aligner.rotate - aligner.strafe + 2 * aligner.straight);
-                bl.setPower(aligner.rotate - aligner.strafe + 2 * aligner.straight);
-                br.setPower(-aligner.rotate + aligner.strafe + 2 * aligner.straight);
+                fl.setPower(aligner.rotate + aligner.strafe + aligner.straight);
+                fr.setPower(-aligner.rotate - aligner.strafe + aligner.straight);
+                bl.setPower(aligner.rotate - aligner.strafe + aligner.straight);
+                br.setPower(-aligner.rotate + aligner.strafe + aligner.straight);
 
 //                if(Math.abs(startingPose.getX() - currentPose.getX()) > 10){
 //                    strafe = 0;
@@ -407,7 +410,11 @@ public class VisionFiveConeAuto extends LinearOpMode{
 
             drive.update();
 
-            lift.lift(350 - i * 150, false);
+            if(i == 4){
+                lift.lift(0, false);
+            }else {
+                lift.lift(350 - i * 200, false);
+            }
             sleep(500);
             lift.lift(1000, false);
 
@@ -418,8 +425,8 @@ public class VisionFiveConeAuto extends LinearOpMode{
                     })
                     .setTangent(Math.toRadians(0))
                     .splineToConstantHeading(new Vector2d(-45,12),Math.toRadians(0))
-                    .addDisplacementMarker(5, () -> {
-                        lift.lift(1850, true);
+                    .addTemporalMarker(1.5, () -> {
+                        lift.lift(2200, true);
                     })
                     .splineToSplineHeading(new Pose2d(-36, 12, Math.toRadians(135)), Math.toRadians(0))
                     .build();
@@ -435,7 +442,7 @@ public class VisionFiveConeAuto extends LinearOpMode{
 
             AlignerTime = timer.time(TimeUnit.MILLISECONDS);
             drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            while(alignedTime < 500 /** && (timer.time(TimeUnit.MILLISECONDS) - AlignerTime) < 3000*/) {
+            while(alignedTime < 250 /** && (timer.time(TimeUnit.MILLISECONDS) - AlignerTime) < 3000*/) {
                 aligner.updateHardware(Math.toDegrees(drive.getPoseEstimate().getHeading()),frontDist.getDistance(DistanceUnit.INCH), backDist.getDistance(DistanceUnit.INCH));
 
                 currentPose = drive.getPoseEstimate();
@@ -460,7 +467,7 @@ public class VisionFiveConeAuto extends LinearOpMode{
                     toggle2 = true;
                 }
 
-                if(aligner.camera.getAngle(false) < 10){
+                if(aligner.camera.getAngle(false) < 10 || sideDist.getDistance(DistanceUnit.INCH) < 6){
                     break;
                 }
 
